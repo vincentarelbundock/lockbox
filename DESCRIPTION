@@ -3,7 +3,7 @@ Type: Package
 Title: Modern Encryption for R Using 'age' and 'SOPS'
 Description: Secure file encryption and secret management for R using modern cryptographic tools. Provides functions to encrypt/decrypt files with 'age' and manage secrets in encrypted YAML files with 'SOPS'. Secrets can be easily exported as environment variables for use with APIs and services. Supports both file-based and in-memory key management workflows.
 Version: 0.0.1
-URL: https://github.com/vincentarelbundock/lockbox/issues
+URL: https://vincentarelbundock.github.io/lockbox
 BugReports: https://github.com/vincentarelbundock/lockbox/issues
 Authors@R: c(
   person("Vincent", "Arel-Bundock",
