@@ -13,7 +13,10 @@
 #' @keywords internal
 .with_sops_key <- function(private, expr) {
   if (is.null(private)) {
-    return(expr)
+    private <- readline("Enter private key: ")
+    if (nchar(private) == 0) {
+      stop("Private key cannot be empty")
+    }
   }
 
   # Private key is a file path - read the private key

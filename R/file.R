@@ -52,14 +52,14 @@ file_encrypt <- function(input,
 
 #' Decrypt an age-encrypted file
 #'
-#' Decrypt a file that was encrypted with age. Can use a private key, key file, or passphrase.
+#' Decrypt a file that was encrypted with age. Can use a private key or key file.
 #'
 #' @param input Character string. Path to the encrypted `.age` file.
 #' @param output Character string. Path for the decrypted output file. Defaults to removing `.age` extension.
 #' @param private Character string or NULL. Private key for decryption. Can be:
 #'   - A private key string starting with "AGE-SECRET-KEY-1"
 #'   - Path to an age identity file
-#'   - NULL to prompt for passphrase
+#'   - NULL to prompt for private key input
 #'
 #' @return Invisibly returns the output file path.
 #'
@@ -72,7 +72,7 @@ file_encrypt <- function(input,
 #' # Decrypt with key file
 #' file_decrypt("sensitive.csv.age", private = "identity.key")
 #'
-#' # Decrypt with passphrase
+#' # Decrypt with prompted private key
 #' file_decrypt("sensitive.csv.age")
 #'
 #' # Custom output path
@@ -85,8 +85,12 @@ file_decrypt <- function(input,
                          private = NULL) {
     assert_tools()
     if (is.null(private)) {
-        args <- c("--decrypt", "--passphrase")
-        stdin_input <- NULL
+        private <- readline("Enter private key: ")
+        if (nchar(private) == 0) {
+            stop("Private key cannot be empty")
+        }
+        args <- c("--decrypt", "-i", "-")
+        stdin_input <- private
     } else if (file.exists(private)) {
         args <- c("--decrypt", "-i", private)
         stdin_input <- NULL
@@ -94,7 +98,7 @@ file_decrypt <- function(input,
         args <- c("--decrypt", "-i", "-")
         stdin_input <- private
     } else {
-        stop("`private` must be NULL, a filepath, or a private-key string starting with AGE-SECRET-KEY-1")
+        stop("`private` must be a filepath or a private-key string starting with AGE-SECRET-KEY-1")
     }
 
     args <- c(args, "-o", output, input)
