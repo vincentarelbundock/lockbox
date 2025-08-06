@@ -5,10 +5,10 @@
 \title{Encrypt a file using age}
 \usage{
 file_encrypt(
-  input,
-  output = paste0(input, ".age"),
+  input = NULL,
+  output = if (!is.null(input)) paste0(input, ".age") else NULL,
   public = NULL,
-  passphrase = FALSE,
+  overwrite = FALSE,
   armor = FALSE
 )
 }
@@ -18,9 +18,7 @@ file_encrypt(
 \item{output}{Character string. Path for the encrypted output file. Defaults to \code{input.age}.}
 
 \item{public}{Character vector or NULL. Public key(s) for encryption (age recipient identifiers).
-Must be provided if \code{passphrase = FALSE}.}
-
-\item{passphrase}{Logical. If TRUE, prompts for a passphrase instead of using public keys.}
+If NULL, will prompt for a passphrase instead.}
 
 \item{armor}{Logical. If TRUE, outputs ASCII-armored format instead of binary.}
 }
@@ -38,7 +36,7 @@ key <- key_generate()
 file_encrypt("sensitive.csv", public = key$public)
 
 # Encrypt with passphrase
-file_encrypt("sensitive.csv", passphrase = TRUE)
+file_encrypt("sensitive.csv")
 
 # Custom output path and ASCII armor
 file_encrypt("data.txt", "encrypted_data.age", key$public, armor = TRUE)

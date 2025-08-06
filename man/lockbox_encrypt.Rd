@@ -4,22 +4,22 @@
 \alias{lockbox_encrypt}
 \title{Encrypt secrets to a SOPS lockbox}
 \usage{
-lockbox_encrypt(lockbox, secrets, public, private = NULL)
+lockbox_encrypt(lockbox, secrets, public = NULL, private = NULL)
 }
 \arguments{
 \item{lockbox}{Character string. Path to the lockbox YAML file to create or update.}
 
 \item{secrets}{Named list. Secrets to encrypt, where names are variable names and values are the secret values.}
 
-\item{public}{Character vector. One or more public keys for encryption (age recipient identifiers).}
+\item{public}{Character vector or NULL. One or more public keys for encryption (age recipient identifiers or PGP fingerprints). Required for new lockbox files. If NULL and lockbox exists, public keys will be auto-detected from the existing file.}
 
-\item{private}{Character string or NULL. Private key required if lockbox already exists (for decryption and merging). Can be a private key string starting with "AGE-SECRET-KEY-1" or path to a key file.}
+\item{private}{Character string or NULL. Path to identity file required if lockbox already exists (for decryption and merging). Not required for PGP encrypted lockboxes.}
 }
 \value{
 Invisibly returns NULL.
 }
 \description{
-Store secrets in an encrypted YAML file using SOPS and age encryption.
+Store secrets in an encrypted YAML file using SOPS with age or PGP encryption.
 If the lockbox file already exists, secrets will be merged with existing ones.
 }
 \examples{
@@ -31,9 +31,9 @@ key <- key_generate()
 secrets <- list(API_KEY = "secret123", DB_PASSWORD = "pass456")
 lockbox_encrypt("secrets.yaml", secrets, key$public)
 
-# Add more secrets to existing lockbox
+# Add more secrets to existing lockbox (auto-detects public keys)
 more_secrets <- list(NEW_TOKEN = "token789")
-lockbox_encrypt("secrets.yaml", more_secrets, key$public, key$private)
+lockbox_encrypt("secrets.yaml", more_secrets, private = "identity.key")
 }
 
 }

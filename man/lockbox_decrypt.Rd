@@ -11,25 +11,25 @@ lockbox_decrypt(lockbox, secrets = NULL, private = NULL)
 
 \item{secrets}{Character vector or NULL. Specific secret names to retrieve. If NULL, returns all secrets.}
 
-\item{private}{Character string or NULL. Private key for decryption. Can be a private key string starting with "AGE-SECRET-KEY-1" or path to a key file. If NULL, uses default SOPS key resolution.}
+\item{private}{Character string or NULL. Path to identity file for decryption. If NULL, uses default SOPS key resolution. Not required for PGP encrypted lockboxes.}
 }
 \value{
 Named list of decrypted secrets.
 }
 \description{
-Retrieve and decrypt secrets from an encrypted YAML lockbox file.
+Retrieve and decrypt secrets from an encrypted YAML lockbox file (age or PGP).
 Can return all secrets or filter to specific secret names.
 }
 \examples{
 \dontrun{
 # Decrypt all secrets
-all_secrets <- lockbox_decrypt("secrets.yaml", private = key$private)
+all_secrets <- lockbox_decrypt("secrets.yaml", private = "identity.key")
 
 # Decrypt specific secrets
-api_key <- lockbox_decrypt("secrets.yaml", secrets = "API_KEY", private = key$private)
+api_key <- lockbox_decrypt("secrets.yaml", secrets = "API_KEY", private = "identity.key")
 
 # Decrypt multiple specific secrets
-creds <- lockbox_decrypt("secrets.yaml", secrets = c("API_KEY", "PASSWORD"), private = key$private)
+creds <- lockbox_decrypt("secrets.yaml", secrets = c("API_KEY", "PASSWORD"), private = "identity.key")
 
 # Decrypt using key file
 all_secrets <- lockbox_decrypt("secrets.yaml", private = "identity.key")

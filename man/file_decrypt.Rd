@@ -4,7 +4,7 @@
 \alias{file_decrypt}
 \title{Decrypt an age-encrypted file}
 \usage{
-file_decrypt(input, output, private = NULL)
+file_decrypt(input = NULL, output = NULL, private = NULL, overwrite = FALSE)
 }
 \arguments{
 \item{input}{Character string. Path to the encrypted \code{.age} file.}
@@ -15,14 +15,14 @@ file_decrypt(input, output, private = NULL)
 \itemize{
 \item A private key string starting with "AGE-SECRET-KEY-1"
 \item Path to an age identity file
-\item NULL to prompt for passphrase
+\item NULL to prompt for passphrase input
 }}
 }
 \value{
 Invisibly returns the output file path.
 }
 \description{
-Decrypt a file that was encrypted with age. Can use a private key, key file, or passphrase.
+Decrypt a file that was encrypted with age. Can use a private key or key file.
 }
 \examples{
 \dontrun{
@@ -33,7 +33,7 @@ file_decrypt("sensitive.csv.age", private = key$private)
 # Decrypt with key file
 file_decrypt("sensitive.csv.age", private = "identity.key")
 
-# Decrypt with passphrase
+# Decrypt with prompted passphrase
 file_decrypt("sensitive.csv.age")
 
 # Custom output path

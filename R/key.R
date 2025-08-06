@@ -24,7 +24,7 @@
 #'
 #' @export
 key_generate <- function(keyfile = NULL) {
-    assert_tools()
+    assert_age()
     if (!is.null(keyfile)) {
         exists <- isTRUE(checkmate::check_file_exists(keyfile))
         if (exists) stop("`keyfile` already exists: ", keyfile)
@@ -74,7 +74,7 @@ print.lockbox_key <- function(x, ...) {
 #'
 #' @export
 key_public <- function(keyfile) {
-    assert_tools()
+    assert_age()
     key <- system2("age-keygen",
         args = c("-y", shQuote(keyfile)),
         stdout = TRUE)
@@ -101,7 +101,7 @@ key_public <- function(keyfile) {
 #'
 #' @export
 key_private <- function(keyfile) {
-    assert_tools()
+    assert_age()
     checkmate::assert_file_exists(keyfile)
 
     lines <- readLines(keyfile)

@@ -9,7 +9,7 @@ lockbox_export(lockbox, private = NULL)
 \arguments{
 \item{lockbox}{Character string. Path to the lockbox YAML file.}
 
-\item{private}{Character string or NULL. Private key for decryption. Can be a private key string starting with "AGE-SECRET-KEY-1" or path to a key file. If NULL, uses default SOPS key resolution.}
+\item{private}{Character string or NULL. Path to identity file for decryption. If NULL, uses default SOPS key resolution. Not required for PGP encrypted lockboxes.}
 }
 \value{
 Invisibly returns the secrets list.
@@ -21,7 +21,7 @@ This allows R packages and scripts to access secrets via Sys.getenv().
 \examples{
 \dontrun{
 # Export all secrets as environment variables
-lockbox_export("secrets.yaml", private = key$private)
+lockbox_export("secrets.yaml", private = "identity.key")
 
 # Now you can access them
 api_key <- Sys.getenv("API_KEY")
