@@ -1,33 +1,32 @@
-#' @keywords internal
-assert_sops <- function() {
-    sops_available <- nzchar(Sys.which("sops"))
-    if (sops_available) {
-        sops_available <- tryCatch(
-            {
-                system("sops --version", intern = TRUE, ignore.stdout = TRUE, ignore.stderr = TRUE)
-                TRUE
-            },
-            error = function(e) FALSE)
-    }
-    
-    if (!sops_available) {
-        stop("SOPS is not available. Install from https://github.com/mozilla/sops", call. = FALSE)
-    }
+with_env <- function(env_vars, expr) {
+    # Store original values
+    original <- lapply(names(env_vars), function(name) {
+        current <- Sys.getenv(name, unset = NA)
+        if (is.na(current)) NULL else current
+    })
+    names(original) <- names(env_vars)
+    # Set new values
+    do.call(Sys.setenv, env_vars)
+    # Ensure restoration happens even if expr fails
+    on.exit({
+        for (name in names(original)) {
+            if (is.null(original[[name]])) {
+                Sys.unsetenv(name)
+            } else {
+                do.call(Sys.setenv, setNames(list(original[[name]]), name))
+            }
+        }
+    })
+    # Execute expression
+    expr
 }
 
-#' @keywords internal
-assert_age <- function() {
-    age_available <- nzchar(Sys.which("age"))
-    if (age_available) {
-        age_available <- tryCatch(
-            {
-                system("age --version", intern = TRUE, ignore.stdout = TRUE, ignore.stderr = TRUE)
-                TRUE
-            },
-            error = function(e) FALSE)
-    }
-    
-    if (!age_available) {
-        stop("age is not available. Install from https://github.com/FiloSottile/age", call. = FALSE)
+
+sanity_secrets <- function(secrets) {
+    checkmate::assert_list(secrets, names = "unique")
+    for (s in secrets) {
+        if (!is.character(s) || length(s) != 1) {
+            stop("All secrets must be single character strings.", call. = FALSE)
+        }
     }
 }
