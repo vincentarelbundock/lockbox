@@ -106,11 +106,11 @@ cat("Very sensitive data.\n", file = "sensitive.txt")
 readLines("sensitive.txt")
 ```
 
-Now, let's use the public key and the `file_encrypt()` function to encrypt the file. A `.age` suffix, and the content becomes unreadable.
+Now, let's use the public key and the `age_encrypt()` function to encrypt the file. A `.age` suffix is added, and the content becomes unreadable.
 
 ```{r}
 #| warning: false
-file_encrypt(
+age_encrypt(
   input = "sensitive.txt",
   public = key$public
 )
@@ -118,13 +118,13 @@ file_encrypt(
 readLines("sensitive.txt.age")
 ```
 
-Finally, we can decrypt the file using the private key. The decrypted content is written to the `output` file or returned as a character vector if `output` is omitted.
+Finally, we can decrypt the file using the private key file. The decrypted content is written to the specified output file.
 
 ```{r}
-file_decrypt(
+age_decrypt(
   input = "sensitive.txt.age",
   output = "sensitive_decrypted.txt",
-  private = key$private
+  private = "identity.key"
 )
 
 readLines("sensitive_decrypted.txt")
@@ -136,7 +136,7 @@ Several packages and application require users to export secrets as environment 
 
 For example, you need to store a security to access an API, the location of your private database, and some credentials to access AWS services. First, we define a named list with the values that we wish to store securely. 
 
-Then, we call `lockbox_encrypt()` to encrypt those secrets into our lockbox file. Again, we use the public key for encryption.
+Then, we call `sops_encrypt()` to encrypt those secrets into our lockbox file. Again, we use the public key for encryption.
 
 ```{r}
 secrets <- list(
@@ -145,7 +145,7 @@ secrets <- list(
   AWS_ACCESS_KEY_ID = "AKIAIOSFODNN7EXAMPLE"
 )
 
-lockbox_encrypt(
+sops_encrypt(
   lockbox = "lockbox.yaml",
   secrets = secrets,
   public = key$public
@@ -154,22 +154,12 @@ lockbox_encrypt(
 
 ### Retrieving secrets from a `lockbox`
 
-Now, we can retreive a few secrets using our private key.
+Now, we can retrieve all secrets using our private key file.
 
 ```{r}
-lockbox_decrypt(
+sops_decrypt(
   lockbox = "lockbox.yaml",
-  secrets = c("API_KEY", "DATABASE_URL"),
-  private = key$private
-)
-```
-
-Or all secrets at once by omitting the `secrets` argument:
-
-```{r}
-lockbox_decrypt(
-  lockbox = "lockbox.yaml",
-  private = key$private
+  private = "identity.key"
 )
 ```
 
@@ -178,9 +168,9 @@ lockbox_decrypt(
 Finally, we can export all secrets from the lockbox file as environment variables. This is useful for applications that rely on environment variables for configuration.
 
 ```{r}
-lockbox_export(
+sops_export(
   lockbox = "lockbox.yaml",
-  private = key$private
+  private = "identity.key"
 )
 ```
 
@@ -191,12 +181,78 @@ Sys.getenv("API_KEY")
 Sys.getenv("DATABASE_URL")
 ```
 
+## Enhanced Security: Encrypting Your Private Key
+
+For even more security, you can encrypt your private key file itself using a passphrase. This adds an extra layer of protection - even if someone gains access to your key file, they would need to know the passphrase to use it.
+
+### Step 1: Encrypt the private key with a passphrase
+
+```{r}
+#| eval: false
+# Encrypt the identity key file with a passphrase
+age_encrypt(
+  input = "identity.key",
+  output = "identity.key.age"
+)
+# You will be prompted to enter a secure passphrase
+```
+
+When you run this command, you'll be prompted to enter a passphrase. Choose a strong, memorable passphrase.
+
+### Step 2: Remove the unencrypted key file
+
+```{r}
+#| eval: false
+# Remove the original unencrypted key file for security
+unlink("identity.key")
+```
+
+### Step 3: Use the password-protected key file
+
+Now you can use your password-protected key file with all the same functions. The lockbox package will automatically detect that it's an encrypted key file and prompt you for the passphrase when needed.
+
+```{r}
+#| eval: false
+# Decrypt secrets using the password-protected key
+# You will be prompted for your passphrase
+sops_decrypt(
+  lockbox = "lockbox.yaml",
+  private = "identity.key.age"
+)
+
+# Export secrets using the password-protected key
+sops_export(
+  lockbox = "lockbox.yaml",
+  private = "identity.key.age"
+)
+```
+
+This approach provides **defense in depth**:
+1. Your secrets are encrypted with SOPS/age
+2. Your private key itself is also encrypted with a passphrase
+3. Even if someone accesses your files, they need both the key file AND the passphrase
+
+::::{.callout-tip}
+**Best Practice**: Store your password-protected key file (`identity.key.age`) in a secure location, and use a strong, unique passphrase that you don't use elsewhere.
+::::
+
+## Security Considerations
+
+::::{.callout-warning}
+**Temporary File Handling**
+
+When using password-protected private key files (`.age` files), `lockbox` temporarily decrypts these keys to disk using `tempfile()` so that SOPS can read them. These temporary files are automatically deleted using `on.exit()` to ensure cleanup even if an error occurs.
+
+While this approach follows R best practices for temporary file handling, users with heightened security requirements may prefer to run `age` and `sops` commands directly from the command line to maintain full control over key file handling.
+
+For most users, the temporary file approach provides a good balance of security and usability.
+::::
+
 ```{r}
 #| include: false
 unlink("identity.key")
 unlink("sensitive.txt")
 unlink("sensitive.txt.age")
 unlink("sensitive_decrypted.txt")
-unlink("lockbox.yaml")
 unlink("lockbox.yaml")
 ```

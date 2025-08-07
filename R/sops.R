@@ -16,6 +16,17 @@ assert_sops <- function() {
 }
 
 
+#' Run SOPS command with proper environment setup
+#'
+#' Internal helper function to run SOPS commands with appropriate
+#' environment variables for age keys and recipients.
+#'
+#' @param args Character vector of command line arguments to pass to sops
+#' @param private Character string, path to private age key file (optional)
+#' @param public Character vector of public age recipient keys (optional)
+#'
+#' @return Character vector of command output
+#' @keywords internal
 sops_run <- function(args, private = NULL, public = NULL) {
     env_vars <- list()
 
@@ -27,12 +38,36 @@ sops_run <- function(args, private = NULL, public = NULL) {
         env_vars[["SOPS_AGE_RECIPIENTS"]] <- paste(public, collapse = ",")
     }
 
-    with_env(env_vars, {
+    result <- with_env(env_vars, {
         system2("sops", args, stdout = TRUE, stderr = TRUE)
     })
+
+    status <- attr(result, "status")
+    if (!is.null(status) && status != 0) {
+        if (status == 128) {
+            if (!is.null(private) && any(grepl("--decrypt", args))) {
+                stop("Failed to decrypt with the provided private key. The key may be incorrect or not authorized for this file.", call. = FALSE)
+            } else {
+                stop("SOPS operation failed. This may be due to incorrect keys or permissions.", call. = FALSE)
+            }
+        } else {
+            stop("SOPS command failed with exit code ", status, ": ", paste(result, collapse = "\n"), call. = FALSE)
+        }
+    }
+
+    return(result)
 }
 
 
+#' Extract age recipients from encrypted SOPS file
+#'
+#' Reads a SOPS-encrypted file and extracts the age recipient public keys
+#' that can decrypt the file.
+#'
+#' @param lockbox Character string, path to the SOPS-encrypted file
+#'
+#' @return Character vector of age recipient public keys
+#' @keywords internal
 sops_recipients <- function(lockbox) {
     checkmate::assert_file_exists(lockbox)
     content <- yaml::yaml.load_file(lockbox)
@@ -45,6 +80,36 @@ sops_recipients <- function(lockbox) {
 }
 
 
+#' Encrypt secrets using SOPS
+#'
+#' Creates or updates a SOPS-encrypted file with secrets. For new files,
+#' requires public age keys. For existing files, requires the private key
+#' to decrypt and re-encrypt with new secrets merged in.
+#'
+#' @param lockbox Character string, path to the encrypted file to create/update
+#' @param secrets Named list of secrets to encrypt (keys become variable names)
+#' @param public Character vector of age public keys (required for new files)
+#' @param private Character string, path to private key file (required for updates, can be password-protected age file)
+#'
+#' @return Invisible NULL
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' # Create new encrypted file
+#' sops_encrypt(
+#'   lockbox = "secrets.yaml",
+#'   secrets = list(API_KEY = "secret123"),
+#'   public = "age1xyz..."
+#' )
+#'
+#' # Update existing file
+#' sops_encrypt(
+#'   lockbox = "secrets.yaml", 
+#'   secrets = list(NEW_SECRET = "value"),
+#'   private = "private.key"
+#' )
+#' }
 sops_encrypt <- function(
     lockbox = NULL,
     secrets = NULL,
@@ -83,14 +148,93 @@ sops_encrypt <- function(
 }
 
 
+#' Decrypt secrets from SOPS file
+#'
+#' Decrypts a SOPS-encrypted file and returns the secrets as a named list.
+#' Automatically handles password-protected age private key files by prompting
+#' for the password when needed.
+#'
+#' @param lockbox Character string, path to the SOPS-encrypted file
+#' @param private Character string, path to private age key file (can be password-protected)
+#'
+#' @return Named list of decrypted secrets
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' # Decrypt with regular private key
+#' secrets <- sops_decrypt("secrets.yaml", "private.key")
+#'
+#' # Decrypt with password-protected private key (will prompt for password)
+#' secrets <- sops_decrypt("secrets.yaml", "private.key.age")
+#'
+#' # Access individual secrets
+#' api_key <- secrets$API_KEY
+#' }
 sops_decrypt <- function(
     lockbox = NULL,
     private = NULL) {
     assert_sops()
     checkmate::assert_file_exists(lockbox)
     checkmate::assert_file_exists(private)
+
+    # Check if private file is a password-protected age file
+    if (isTRUE(check_age_file(private))) {
+        # Decrypt the password-protected age file to a temporary file
+        temp_key <- tempfile(fileext = ".key")
+        on.exit(unlink(temp_key), add = TRUE)
+
+        age_decrypt(input = private, output = temp_key)
+        private <- temp_key
+    }
+
     args <- c("--decrypt", shQuote(lockbox))
     res <- sops_run(args, private = private)
+
+    # Check if decryption failed by examining the output
+    if (length(res) == 0 || all(nchar(res) == 0)) {
+        stop("Decryption returned empty output. The private key may be incorrect or not authorized for this file.", call. = FALSE)
+    }
     res <- yaml::yaml.load(res)
     return(res)
+}
+
+
+#' Export SOPS secrets to environment variables
+#'
+#' Decrypts secrets from a SOPS file and sets them as environment variables
+#' in the current R session. Each secret becomes an environment variable
+#' with the same name.
+#'
+#' @param lockbox Character string, path to the SOPS-encrypted file
+#' @param private Character string, path to private age key file (can be password-protected)
+#'
+#' @return Invisible character vector of exported variable names
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' # Export all secrets as environment variables
+#' sops_export("secrets.yaml", "private.key")
+#'
+#' # Now secrets are available as environment variables
+#' api_key <- Sys.getenv("API_KEY")
+#' }
+sops_export <- function(
+    lockbox = NULL,
+    private = NULL) {
+    assert_sops()
+    checkmate::assert_file_exists(lockbox)
+    checkmate::assert_file_exists(private)
+
+    # Decrypt the secrets and set them as environment variables
+    secrets <- sops_decrypt(lockbox = lockbox, private = private)
+
+    # Set each secret as an environment variable
+    for (name in names(secrets)) {
+        do.call("Sys.setenv", setNames(list(secrets[[name]]), name))
+    }
+
+    # Return the names of the exported variables
+    invisible(names(secrets))
 }

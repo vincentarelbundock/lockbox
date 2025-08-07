@@ -88,8 +88,8 @@ key <- key_generate("identity.key")
 key
 ```
 
-    Key created:  2025-08-06 09:18:00.405399 
-    Public key:  age13uvusepu9g74kh4qyt0735vkx4q4kf8faeulekenrs6ldydktvaq2rkv4f 
+    Key created:  2025-08-06 20:20:30.458858 
+    Public key:  age15tux9ausfhhag5rl95kchng7m83t4z0qln7yq5e664qdpnup7cxs53kugu 
     Private key: AGE-SECRET-KEY-********* 
 
 This command also wrote a local “identity file” with the given name,
@@ -109,13 +109,13 @@ identity file using helper functions.
 key$public
 ```
 
-    [1] "age13uvusepu9g74kh4qyt0735vkx4q4kf8faeulekenrs6ldydktvaq2rkv4f"
+    [1] "age15tux9ausfhhag5rl95kchng7m83t4z0qln7yq5e664qdpnup7cxs53kugu"
 
 ``` r
 key_private("identity.key")
 ```
 
-    [1] "AGE-SECRET-KEY-10L6J2HT8ENPR9MXDLY0AKR6EDPK36F6RRM5TTD3VWM6U6G2YFVVS6HH8RQ"
+    [1] "AGE-SECRET-KEY-1GS63VF2L9M2DCTCTJRCGSJNREZTSYHF7GVL4U8CZFX0FY7LSPT2QA3GKE5"
 
 > [!WARNING]
 >
@@ -137,11 +137,12 @@ readLines("sensitive.txt")
 
     [1] "Very sensitive data."
 
-Now, let’s use the public key and the `file_encrypt()` function to
-encrypt the file. A `.age` suffix, and the content becomes unreadable.
+Now, let’s use the public key and the `age_encrypt()` function to
+encrypt the file. A `.age` suffix is added, and the content becomes
+unreadable.
 
 ``` r
-file_encrypt(
+age_encrypt(
   input = "sensitive.txt",
   public = key$public
 )
@@ -149,21 +150,21 @@ file_encrypt(
 readLines("sensitive.txt.age")
 ```
 
-    [1] "age-encryption.org/v1"                                                                                                          
-    [2] "-> X25519 jUPDTPKRyjVLXN5o25n0Hr2LnXEPHPQI7fYk6C3jIic"                                                                          
-    [3] "3bTpHWFmgMi4wmsE7B7VsMMefUC4IhLywMOiADPErMY"                                                                                    
-    [4] "--- X1usrR6X3BnoMRevvS8T5eR64jtXN61lPYCXso7zjqo"                                                                                
-    [5] "EИQ\xa8P\xa6Xz\xe1\xd5\177\002\xee\x832(!Z<8\006\xfc\0304iZ\xcfЖ2\177\x87\034[$\x9a\xceWz\xbb\xe4\xfc\xa2\xbc\xc5\0054\x84\a^t6"
+    [1] "age-encryption.org/v1"                                                                                                            
+    [2] "-> X25519 eKmns5bkZa6y97rzIm+GzqKoGU2muRzvIjbcPLlaVGE"                                                                            
+    [3] "Yr/Ocq+bfOkWu/ZdLjuQ7TOQaKdYAwfGxgRr23vk4fg"                                                                                      
+    [4] "--- Ia/WWNff9iS5pBaEaHmvnGL2EAqG7hPVDzr9gIfD+M8"                                                                                  
+    [5] "\xf7\xafx\xd2l\xc18\xc2\026\032\b'\026\xed\xf4\xeeԁ\xa8\xac\x92FCI\xd8\023Ic9V\xab\001\x9a\xdd\xdfJ\xa98\x99\xe3\xc7\u05cb\xe9t\\"
+    [6] "\x98\x81a\f\xeb\xd2"                                                                                                              
 
-Finally, we can decrypt the file using the private key. The decrypted
-content is written to the `output` file or returned as a character
-vector if `output` is omitted.
+Finally, we can decrypt the file using the private key file. The
+decrypted content is written to the specified output file.
 
 ``` r
-file_decrypt(
+age_decrypt(
   input = "sensitive.txt.age",
   output = "sensitive_decrypted.txt",
-  private = key$private
+  private = "identity.key"
 )
 
 readLines("sensitive_decrypted.txt")
@@ -184,8 +185,8 @@ of your private database, and some credentials to access AWS services.
 First, we define a named list with the values that we wish to store
 securely.
 
-Then, we call `lockbox_encrypt()` to encrypt those secrets into our
-lockbox file. Again, we use the public key for encryption.
+Then, we call `sops_encrypt()` to encrypt those secrets into our lockbox
+file. Again, we use the public key for encryption.
 
 ``` r
 secrets <- list(
@@ -194,7 +195,7 @@ secrets <- list(
   AWS_ACCESS_KEY_ID = "AKIAIOSFODNN7EXAMPLE"
 )
 
-lockbox_encrypt(
+sops_encrypt(
   lockbox = "lockbox.yaml",
   secrets = secrets,
   public = key$public
@@ -203,28 +204,12 @@ lockbox_encrypt(
 
 ### Retrieving secrets from a `lockbox`
 
-Now, we can retreive a few secrets using our private key.
+Now, we can retrieve all secrets using our private key file.
 
 ``` r
-lockbox_decrypt(
+sops_decrypt(
   lockbox = "lockbox.yaml",
-  secrets = c("API_KEY", "DATABASE_URL"),
-  private = key$private
-)
-```
-
-    $API_KEY
-    [1] "your-api-key-here"
-
-    $DATABASE_URL
-    [1] "postgresql://user:pass@host:5432/db"
-
-Or all secrets at once by omitting the `secrets` argument:
-
-``` r
-lockbox_decrypt(
-  lockbox = "lockbox.yaml",
-  private = key$private
+  private = "identity.key"
 )
 ```
 
@@ -244,9 +229,9 @@ variables. This is useful for applications that rely on environment
 variables for configuration.
 
 ``` r
-lockbox_export(
+sops_export(
   lockbox = "lockbox.yaml",
-  private = key$private
+  private = "identity.key"
 )
 ```
 
@@ -263,3 +248,82 @@ Sys.getenv("DATABASE_URL")
 ```
 
     [1] "postgresql://user:pass@host:5432/db"
+
+## Enhanced Security: Encrypting Your Private Key
+
+For even more security, you can encrypt your private key file itself
+using a passphrase. This adds an extra layer of protection - even if
+someone gains access to your key file, they would need to know the
+passphrase to use it.
+
+### Step 1: Encrypt the private key with a passphrase
+
+``` r
+# Encrypt the identity key file with a passphrase
+age_encrypt(
+  input = "identity.key",
+  output = "identity.key.age"
+)
+# You will be prompted to enter a secure passphrase
+```
+
+When you run this command, you’ll be prompted to enter a passphrase.
+Choose a strong, memorable passphrase.
+
+### Step 2: Remove the unencrypted key file
+
+``` r
+# Remove the original unencrypted key file for security
+unlink("identity.key")
+```
+
+### Step 3: Use the password-protected key file
+
+Now you can use your password-protected key file with all the same
+functions. The lockbox package will automatically detect that it’s an
+encrypted key file and prompt you for the passphrase when needed.
+
+``` r
+# Decrypt secrets using the password-protected key
+# You will be prompted for your passphrase
+sops_decrypt(
+  lockbox = "lockbox.yaml",
+  private = "identity.key.age"
+)
+
+# Export secrets using the password-protected key
+sops_export(
+  lockbox = "lockbox.yaml",
+  private = "identity.key.age"
+)
+```
+
+This approach provides **defense in depth**: 1. Your secrets are
+encrypted with SOPS/age 2. Your private key itself is also encrypted
+with a passphrase 3. Even if someone accesses your files, they need both
+the key file AND the passphrase
+
+> [!TIP]
+>
+> **Best Practice**: Store your password-protected key file
+> (`identity.key.age`) in a secure location, and use a strong, unique
+> passphrase that you don’t use elsewhere.
+
+## Security Considerations
+
+> [!WARNING]
+>
+> **Temporary File Handling**
+>
+> When using password-protected private key files (`.age` files),
+> `lockbox` temporarily decrypts these keys to disk using `tempfile()`
+> so that SOPS can read them. These temporary files are automatically
+> deleted using `on.exit()` to ensure cleanup even if an error occurs.
+>
+> While this approach follows R best practices for temporary file
+> handling, users with heightened security requirements may prefer to
+> run `age` and `sops` commands directly from the command line to
+> maintain full control over key file handling.
+>
+> For most users, the temporary file approach provides a good balance of
+> security and usability.

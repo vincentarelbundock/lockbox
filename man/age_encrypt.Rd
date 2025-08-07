@@ -12,6 +12,37 @@ age_encrypt(
   armor = FALSE
 )
 }
+\arguments{
+\item{input}{Character string, path to the file to encrypt}
+
+\item{output}{Character string, path for the encrypted output file.
+Defaults to \code{input} + ".age" extension}
+
+\item{public}{Character vector of age public keys (recipients). If NULL,
+will use passphrase encryption and prompt for password}
+
+\item{overwrite}{Logical, whether to overwrite existing output file}
+
+\item{armor}{Logical, whether to use ASCII armor format (only applies to public key encryption)}
+}
+\value{
+Invisible NULL
+}
 \description{
-Encrypt a file using age
+Encrypts a file using the age encryption tool. Can encrypt with public keys
+(for key-based encryption) or with a passphrase (when no public keys provided).
+When using passphrase encryption, the user will be prompted to enter a password.
+}
+\examples{
+\dontrun{
+# Encrypt with public key
+age_encrypt("secret.txt", public = "age1xyz...")
+
+# Encrypt with passphrase (will prompt)
+age_encrypt("secret.txt")
+
+# Encrypt with custom output path and armor
+age_encrypt("secret.txt", "encrypted.age", 
+            public = "age1xyz...", armor = TRUE)
+}
 }

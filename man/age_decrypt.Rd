@@ -6,6 +6,30 @@
 \usage{
 age_decrypt(input = NULL, output = NULL, private = NULL, overwrite = FALSE)
 }
+\arguments{
+\item{input}{Character string, path to the age-encrypted file to decrypt}
+
+\item{output}{Character string, path for the decrypted output file}
+
+\item{private}{Character string, path to the private age key file. If NULL,
+will use passphrase decryption and prompt for password}
+
+\item{overwrite}{Logical, whether to overwrite existing output file}
+}
+\value{
+Invisible path to the output file
+}
 \description{
-Decrypt an age-encrypted file
+Decrypts a file that was encrypted with age. Can decrypt using a private key file
+(for key-based decryption) or by prompting for a passphrase (when no private key provided).
+When using passphrase decryption, the user will be prompted to enter the password.
+}
+\examples{
+\dontrun{
+# Decrypt with private key
+age_decrypt("secret.txt.age", "secret.txt", private = "identity.key")
+
+# Decrypt with passphrase (will prompt)
+age_decrypt("secret.txt.age", "secret.txt")
+}
 }
