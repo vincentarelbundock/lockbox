@@ -179,6 +179,13 @@ sops_decrypt <- function(
     checkmate::assert_file_exists(private)
 
     # Check if private file is a password-protected age file
+    if (isTRUE(check_age_file(private))) {
+        tf <- tempfile(fileext = ".yaml")
+        on.exit(unlink(tf), add = TRUE)
+        age_decrypt(input = private, output = tf)
+        private <- tf
+    }
+
     args <- c("--decrypt", shQuote(lockbox))
     res <- sops_run(args, private = private)
 

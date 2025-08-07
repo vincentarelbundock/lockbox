@@ -86,14 +86,6 @@ remotes::install_github("vincentarelbundock/lockbox")
 Our first step is to create a private/public key pair using the `age_keygen()` function. The private key is saved to a file and should be kept secret. The public key can be shared and is used to encrypt data.
 
 ```{r}
-#| include: false
-unlink("private.key")
-unlink("sensitive.txt")
-unlink("sensitive.txt.age")
-unlink("sensitive_decrypted.txt")
-unlink("lockbox.yaml")
-```
-```{r}
 library(lockbox)
 key <- age_keygen("private.key")
 key
@@ -246,18 +238,17 @@ Now you can use your password-protected key file with all the same functions. Th
 
 ```{r}
 #| eval: false
-# Decrypt secrets using the password-protected key
-# You will be prompted for your passphrase
 sops_decrypt(
   lockbox = "lockbox.yaml",
   private = "private.key.age"
 )
+# You will be prompted for your passphrase
 
-# Export secrets using the password-protected key
 sops_export(
   lockbox = "lockbox.yaml",
   private = "private.key.age"
 )
+# You will be prompted for your passphrase
 ```
 
 ## Security Considerations
@@ -274,6 +265,6 @@ For most users, the temporary file approach provides a good balance of security 
 
 ```{r}
 #| include: false
-trash <- c("private.key.age", "sensitive.txt", "sensitive.txt.age", "sensitive_decrypted.txt", "lockbox.yaml")
+trash <- c("private.key", "private.key.age", "sensitive.txt", "sensitive.txt.age", "sensitive_decrypted.txt", "lockbox.yaml")
 sapply(trash, unlink, force = TRUE)
 ```

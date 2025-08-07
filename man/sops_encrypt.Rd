@@ -27,16 +27,16 @@ to decrypt and re-encrypt with new secrets merged in.
 \dontrun{
 # Create new encrypted file
 sops_encrypt(
-  lockbox = "secrets.yaml",
-  secrets = list(API_KEY = "secret123"),
-  public = "age1xyz..."
+    lockbox = "secrets.yaml",
+    secrets = list(API_KEY = "secret123"),
+    public = "age1xyz..."
 )
 
 # Update existing file
 sops_encrypt(
-  lockbox = "secrets.yaml", 
-  secrets = list(NEW_SECRET = "value"),
-  private = "private.key"
+    lockbox = "secrets.yaml",
+    secrets = list(NEW_SECRET = "value"),
+    private = "private.key"
 )
 }
 }

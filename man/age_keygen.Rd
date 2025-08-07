@@ -14,18 +14,18 @@ The file will contain both public and private key information.}
 A \code{lockbox_key} object containing:
 \itemize{
 \item \verb{$public}: The public key (age recipient identifier)
-\item \verb{$private}: The private key
-\item \verb{$created}: Timestamp of key creation
+\item \verb{$private}: The private key (only for newly created keys)
+\item \verb{$created}: Timestamp of key creation (only for newly created keys)
 }
 
-If the key file already exists, returns the existing public key invisibly
-and displays a message rather than overwriting.
+If the key file already exists, returns a \code{lockbox_key} object with only
+the \verb{$public} component and displays a message about not overwriting.
 }
 \description{
 Create a new age encryption key pair and save it to a file. The key pair consists
 of a public key (for encryption) and a private key (for decryption). If the specified
-key file already exists, the function will display the existing public key instead
-of overwriting it.
+key file already exists, the function will return the existing public key without
+overwriting the file.
 }
 \examples{
 \dontrun{
@@ -33,8 +33,9 @@ of overwriting it.
 key <- age_keygen("my_identity.key")
 print(key$public)
 
-# If file already exists, shows existing key without overwriting
-age_keygen("my_identity.key")  # Will not overwrite existing key
+# If file already exists, returns existing public key without overwriting
+existing_key <- age_keygen("my_identity.key")
+print(existing_key$public)  # Shows existing public key
 }
 
 }
