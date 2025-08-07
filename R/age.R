@@ -24,9 +24,9 @@ assert_age <- function() {
 #' When using passphrase encryption, the user will be prompted to enter a password.
 #'
 #' @param input Character string, path to the file to encrypt
-#' @param output Character string, path for the encrypted output file. 
+#' @param output Character string, path for the encrypted output file.
 #'   Defaults to `input` + ".age" extension
-#' @param public Character vector of age public keys (recipients). If NULL, 
+#' @param public Character vector of age public keys (recipients). If NULL,
 #'   will use passphrase encryption and prompt for password
 #' @param overwrite Logical, whether to overwrite existing output file
 #' @param armor Logical, whether to use ASCII armor format (only applies to public key encryption)
@@ -43,8 +43,8 @@ assert_age <- function() {
 #' age_encrypt("secret.txt")
 #'
 #' # Encrypt with custom output path and armor
-#' age_encrypt("secret.txt", "encrypted.age", 
-#'             public = "age1xyz...", armor = TRUE)
+#' age_encrypt("secret.txt", "encrypted.age",
+#'     public = "age1xyz...", armor = TRUE)
 #' }
 age_encrypt <- function(input = NULL,
                         output = if (!is.null(input)) paste0(input, ".age") else NULL,
@@ -129,4 +129,72 @@ age_decrypt <- function(input = NULL,
 
     if (res != 0) stop("age decryption failed (exit code ", res, ")")
     invisible(output)
+}
+
+
+#' Generate a new age identity (key pair)
+#'
+#' Create a new age encryption key pair and save it to a file. The key pair consists
+#' of a public key (for encryption) and a private key (for decryption). If the specified
+#' key file already exists, the function will return the existing public key without
+#' overwriting the file.
+#'
+#' @param keyfile Character string, path where the private key will be saved.
+#'   The file will contain both public and private key information.
+#'
+#' @return A `lockbox_key` object containing:
+#'   - `$public`: The public key (age recipient identifier)  
+#'   - `$private`: The private key (only for newly created keys)
+#'   - `$created`: Timestamp of key creation (only for newly created keys)
+#'   
+#'   If the key file already exists, returns a `lockbox_key` object with only
+#'   the `$public` component and displays a message about not overwriting.
+#'
+#' @examples
+#' \dontrun{
+#' # Generate and save new key to file
+#' key <- age_keygen("my_identity.key")
+#' print(key$public)
+#'
+#' # If file already exists, returns existing public key without overwriting
+#' existing_key <- age_keygen("my_identity.key")
+#' print(existing_key$public)  # Shows existing public key
+#' }
+#'
+#' @export
+age_keygen <- function(keyfile = NULL) {
+    assert_age()
+    checkmate::assert_path_for_output(keyfile, overwrite = TRUE)
+    if (isTRUE(checkmate::check_file_exists(keyfile))) {
+        res <- system2("age-keygen",
+            args = c("-y", shQuote(keyfile)),
+            stdout = TRUE, stderr = TRUE)
+        out <- list("public" = res)
+        class(out) <- "lockbox_key"
+        message("Key file already exists; not overwriting.")
+        return(out)
+    } else {
+        args <- c("-o", shQuote(keyfile))
+        key <- system2("age-keygen", args = args, stdout = TRUE, stderr = TRUE)
+        key <- list(public = key[1], private = key[4])
+        key[["created"]] <- Sys.time()
+        key[["public"]] <- sub("Public key: ", "", key[["public"]])
+        class(key) <- "lockbox_key"
+        return(key)
+    }
+}
+
+
+#' Print method for lockbox_key objects
+#'
+#' @param x A `lockbox_key` object.
+#' @export
+print.lockbox_key <- function(x, ...) {
+    if ("created" %in% names(x)) {
+        x[["created"]] <- format(x[["created"]], "%Y-%m-%d %H:%M:%S")
+        cat("Key created: ", as.character(x[["created"]]), "\n")
+    }
+    x[["public"]] <- sub("Public key: ", "", x[["public"]])
+    cat("Public key: ", paste(x[["public"]], collapse = "\n"), "\n")
+    cat("Private key: AGE-SECRET-KEY-*********", "\n")
 }

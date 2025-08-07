@@ -42,7 +42,7 @@ age_encrypt("secret.txt", public = "age1xyz...")
 age_encrypt("secret.txt")
 
 # Encrypt with custom output path and armor
-age_encrypt("secret.txt", "encrypted.age", 
-            public = "age1xyz...", armor = TRUE)
+age_encrypt("secret.txt", "encrypted.age",
+    public = "age1xyz...", armor = TRUE)
 }
 }

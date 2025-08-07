@@ -98,16 +98,16 @@ sops_recipients <- function(lockbox) {
 #' \dontrun{
 #' # Create new encrypted file
 #' sops_encrypt(
-#'   lockbox = "secrets.yaml",
-#'   secrets = list(API_KEY = "secret123"),
-#'   public = "age1xyz..."
+#'     lockbox = "secrets.yaml",
+#'     secrets = list(API_KEY = "secret123"),
+#'     public = "age1xyz..."
 #' )
 #'
 #' # Update existing file
 #' sops_encrypt(
-#'   lockbox = "secrets.yaml", 
-#'   secrets = list(NEW_SECRET = "value"),
-#'   private = "private.key"
+#'     lockbox = "secrets.yaml",
+#'     secrets = list(NEW_SECRET = "value"),
+#'     private = "private.key"
 #' )
 #' }
 sops_encrypt <- function(
@@ -179,15 +179,6 @@ sops_decrypt <- function(
     checkmate::assert_file_exists(private)
 
     # Check if private file is a password-protected age file
-    if (isTRUE(check_age_file(private))) {
-        # Decrypt the password-protected age file to a temporary file
-        temp_key <- tempfile(fileext = ".key")
-        on.exit(unlink(temp_key), add = TRUE)
-
-        age_decrypt(input = private, output = temp_key)
-        private <- temp_key
-    }
-
     args <- c("--decrypt", shQuote(lockbox))
     res <- sops_run(args, private = private)
 
