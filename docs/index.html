@@ -243,8 +243,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h2 class="anchored" data-anchor-id="why">Why?</h2>
 <p><code>lockbox</code> targets two main use cases:</p>
 <ol type="1">
-<li><em>File Encryption</em>: R users need an easy way to encrypt and decrypt files using simple, modern, secure encryption methods. The functions should allow simple passwords and support key pair workflows.</li>
-<li><em>Secret Management</em>: Many R packages, functions, and services rely on environment variables to retrieve users’ API keys and security tokens (LLM APIs, AWS services, database locations, etc.). Users need a secure way to store secrets in an encrypted file, and a convenient way to export those secrets as environment variables. Although there are solutions for this outside R, it is useful to do it within to ensure that variables are accessible in the current R session.</li>
+<li><em>File Encryption</em>: R users need an easy way to encrypt and decrypt files using simple, modern, secure encryption methods. The package supports simple passwords and support key pair workflows.</li>
+<li><em>Secrets Management</em>: Many R packages, functions, and services rely on environment variables to retrieve users’ API keys, security tokens, and assorted secrets (ex: LLM APIs, AWS services, database locations, etc.). Users need a secure way to store secrets in an encrypted file, and a convenient way to export those secrets as environment variables. Although there are solutions for this outside R, it is useful to do it within to ensure that variables are accessible in the current R session.</li>
 </ol>
 </section>
 <section id="how" class="level2">
@@ -258,11 +258,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h3 class="anchored" data-anchor-id="age-encryption"><code>age</code>: encryption</h3>
 <p><a href="https://age-encryption.org">age</a> is a simple and modern file encryption tool with small keys, no configuration options, and high security. It is designed to replace tools like GPG for most file encryption tasks.</p>
 <p>There are two main encryption strategies with <code>age</code>: passphrase or key pairs.</p>
-<p>The first is simplest. A passphrase when encrypting the file. Whenever we wish to decrypt the file, we are prompted to supply that same password.</p>
+<p>The first is simplest. A passphrase is assigned when encrypting the file. Then, whenever someone wishes to decrypt the file, they are prompted to supply that same password.</p>
 <p>The second strategy relies on a pair of keys:</p>
 <ol type="1">
-<li><em>Public key</em>: a (shareable) <em>string</em> used for encryption.</li>
-<li><em>Private key</em>: a (secret) <em>file</em> for decryption.</li>
+<li>Public key: a <em>shareable</em> string used for encryption.</li>
+<li>Private key: a <em>secret</em> file for decryption.</li>
 </ol>
 <p>This situation illustrates the use of key pairs:</p>
 <ol type="1">
@@ -279,7 +279,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p><a href="https://github.com/mozilla/sops">SOPS</a> is a secrets manager which <code>lockbox</code> uses for two main purposes:</p>
 <ol type="1">
 <li>Organize secrets in an encrypted “lockbox” file in YAML format.</li>
-<li>Export secrets as environment variables to other R processes access to API keys, security tokens, etc.</li>
+<li>Export the secrets held in a lockbox as environment variables, so that other R processes and functions can access API keys, security tokens, etc.</li>
 </ol>
 <div class="callout callout-style-default callout-warning callout-titled">
 <div class="callout-header d-flex align-content-center">
@@ -298,13 +298,12 @@ Warning
 </section>
 <section id="installation" class="level2">
 <h2 class="anchored" data-anchor-id="installation">Installation</h2>
-<p>To use the <code>lockbox</code> package, you must first install the <code>age</code> and <code>sops</code> command line tools. Both tools are free and available on Windows, macOS, and Linux.</p>
-<p>You can find installation instructions on their respective websites:</p>
+<p>To use the <code>lockbox</code> package, you must first install the <code>age</code> and <code>sops</code> command line tools. Both tools are free and available for Windows, macOS, and Linux.</p>
 <ul>
 <li><a href="https://age-encryption.org">https://age-encryption.org</a></li>
 <li><a href="https://getsops.io/">SOPS website</a></li>
 </ul>
-<p>For detailed installation instructions, click on the links above. Most users will it easy to use a package manager like <a href="https://brew.sh/">Homebrew (MacOS)</a> or <a href="https://chocolatey.org/">Chocolatey (Windows)</a> to install these tools.</p>
+<p>For detailed installation instructions, click on the links above. Most users will find it easy to install <code>age</code> and <code>SOPS</code> using a package manager like <a href="https://brew.sh/">Homebrew (MacOS)</a> or <a href="https://chocolatey.org/">Chocolatey (Windows).</a></p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode sh code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># macOS</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ex">brew</span> install age sops</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -314,21 +313,20 @@ Warning
 <span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Linux</span></span>
 <span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Use your distributions package manager</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>Then, you can install the development version of <code>lockbox</code> from Github:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>remotes<span class="sc">::</span><span class="fu">install_github</span>(<span class="st">"vincentarelbundock/lockbox"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>You can install the development version of <code>lockbox</code> from Github:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(remotes)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">install_github</span>(<span class="st">"vincentarelbundock/lockbox"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
-<section id="tutorial" class="level2">
-<h2 class="anchored" data-anchor-id="tutorial">Tutorial</h2>
-<section id="keys" class="level3">
-<h3 class="anchored" data-anchor-id="keys">Keys</h3>
-<p>Our first step is to create a private/public key pair using the <code>key_generate.R()</code> function. The private key is saved to a file and should be kept secret. The public key can be shared and is used to encrypt data.</p>
+<section id="keys" class="level2">
+<h2 class="anchored" data-anchor-id="keys">Keys</h2>
+<p>Our first step is to create a private/public key pair using the <code>key_generate()</code> function. The private key is saved to a file and should be kept secret. The public key can be shared and is used to encrypt data.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(lockbox)</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>key <span class="ot">&lt;-</span> <span class="fu">key_generate.R</span>(<span class="st">"private.key"</span>)</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>key</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Key created:  2025-08-07 08:26:12 
-Public key:  age1akm563lv324w9k396jk9m2fpwlnrqu9d4tjyd8yfmkn6l5spypnsznqd9c 
+<pre><code>Key created:  2025-08-07 08:41:54 
+Public key:  age19hxr0tw2c6kr9ttkvtlhckw9wxn7w5stp2ve4fleugrz8q92d5psvsju4l 
 Private key: AGE-SECRET-KEY-********* </code></pre>
 </div>
 </div>
@@ -349,12 +347,12 @@ Warning
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>The <code>private.key</code> file contains your private key. <strong>Do not share this file</strong>. It should be kept secret and secure.</p>
+<p><strong>Do not share the <code>private.key</code> file</strong>. It should be kept secret and secure.</p>
 </div>
 </div>
 </section>
-<section id="use-case-1-encrypting-files" class="level3">
-<h3 class="anchored" data-anchor-id="use-case-1-encrypting-files">Use-case 1: Encrypting files</h3>
+<section id="use-case-1-encrypting-files" class="level2">
+<h2 class="anchored" data-anchor-id="use-case-1-encrypting-files">Use-case 1: Encrypting files</h2>
 <p><code>lockbox</code> can encrypt and decrypt arbitrary files. To illustrate, let’s create a file with some text in it.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># write file</span></span>
@@ -366,7 +364,7 @@ Warning
 <pre><code>[1] "Very sensitive data."</code></pre>
 </div>
 </div>
-<p>Now, let’s use the public key and the <code>file_encrypt()</code> function to encrypt the file. A <code>.age</code> suffix is added, and the content becomes gibberish.</p>
+<p>Now, let’s use the public key and the <code>file_encrypt()</code> function to encrypt the file. The <code>.age</code> suffix is added automatically to the file name, and the content becomes gibberish.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">file_encrypt</span>(</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">input =</span> <span class="st">"sensitive.txt"</span>,</span>
@@ -375,11 +373,11 @@ Warning
 <span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="fu">readLines</span>(<span class="st">"sensitive.txt.age"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>[1] "age-encryption.org/v1"                                                          
-[2] "-&gt; X25519 qmub95+Q48p6wk1BqHCpY0AKZWoA2RqoNCNvzrq79xU"                          
-[3] "11BXCMoYCh0A770Q4wJF7cIvZXJJPsU1/aU73Yc6Dkk"                                    
-[4] "--- eDUU2dnXBJSlH8T1nUQGguwJ16CqjVLDitBhSVBaFHE"                                
-[5] ")&gt;\xb7\xf0\xed \035Ʀl\xee\x8eC\x88\xd0\xd5*B\xc5'\x84c\x98\x9b\xc4\xd4\xf6\032G"</code></pre>
+<pre><code>[1] "age-encryption.org/v1"                                                                                                                                
+[2] "-&gt; X25519 6mL0k9cqzYyB5KBRSNwtI0SdadQ5AIWpIU9OIchkqDU"                                                                                                
+[3] "GlOZpIiOzKpeMk/NPSdAO8rSEpRA8RyyD9b+0iGVnCs"                                                                                                          
+[4] "--- H8GvLiuMBWus7N6EFpJ7t2IeEcVFn+mhY++WzKdtAxI"                                                                                                      
+[5] "]=?\032\xe2\aVdG\xf0du\\\xb5\xca\xcci\031A=\xaf\xf0!\035\xb0\x92\xbe\031\002C\xb0\xb9\x8f(|b\022\xa9\xf8\021\xb0\x85\x9e\xff\v\xfc\031S\xf4\xcdoD\xb5"</code></pre>
 </div>
 </div>
 <p>Finally, we can decrypt the file using the private key file. The decrypted content is written to the specified output file.</p>
@@ -396,8 +394,8 @@ Warning
 </div>
 </div>
 </section>
-<section id="use-case-2-storing-secrets-in-a-lockbox-and-exporting-them-as-environment-variables" class="level3">
-<h3 class="anchored" data-anchor-id="use-case-2-storing-secrets-in-a-lockbox-and-exporting-them-as-environment-variables">Use-case 2: Storing secrets in a <code>lockbox</code> and exporting them as environment variables</h3>
+<section id="use-case-2-storing-secrets-in-a-lockbox-and-exporting-them-as-environment-variables" class="level2">
+<h2 class="anchored" data-anchor-id="use-case-2-storing-secrets-in-a-lockbox-and-exporting-them-as-environment-variables">Use-case 2: Storing secrets in a <code>lockbox</code> and exporting them as environment variables</h2>
 <p>Several packages and applications require users to export secrets as environment variables for easy access. For example, you may need to store a security key to access the API of an LLM provider; the location of your private database; or credentials to access AWS services.</p>
 <p>Generally speaking, we do <em>not</em> want to store those secrets in plain text files. Instead, we can store them in an encrypted YAML file, and use a helper function to decrypt the file and export environment variables.</p>
 <p>First, we define a named list with the values that we wish to store securely. Then, we call <code>secrets_encrypt()</code> to encrypt those secrets into our lockbox file. Again, we use the public key for encryption.</p>
@@ -415,8 +413,8 @@ Warning
 <span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
-<section id="retrieving-secrets-from-a-lockbox" class="level3">
-<h3 class="anchored" data-anchor-id="retrieving-secrets-from-a-lockbox">Retrieving secrets from a <code>lockbox</code></h3>
+<section id="retrieving-secrets-from-a-lockbox" class="level2">
+<h2 class="anchored" data-anchor-id="retrieving-secrets-from-a-lockbox">Retrieving secrets from a <code>lockbox</code></h2>
 <p>Now, we can retrieve all secrets using our private key file.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">secrets_decrypt</span>(</span>
@@ -435,8 +433,8 @@ $AWS_ACCESS_KEY_ID
 </div>
 </div>
 </section>
-<section id="modifying-secrets-in-a-lockbox" class="level3">
-<h3 class="anchored" data-anchor-id="modifying-secrets-in-a-lockbox">Modifying secrets in a <code>lockbox</code></h3>
+<section id="modifying-secrets-in-a-lockbox" class="level2">
+<h2 class="anchored" data-anchor-id="modifying-secrets-in-a-lockbox">Modifying secrets in a <code>lockbox</code></h2>
 <p>To modify existing secrets or to add new ones, we can simply call <code>secrets_encrypt()</code> again. In this case, however, we need to supply the <code>private</code> key file because modifying requires us to read the existing secrets.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">secrets_encrypt</span>(</span>
@@ -455,8 +453,8 @@ $AWS_ACCESS_KEY_ID
 </div>
 </div>
 </section>
-<section id="exporting-secrets-as-environment-variables" class="level3">
-<h3 class="anchored" data-anchor-id="exporting-secrets-as-environment-variables">Exporting secrets as environment variables</h3>
+<section id="exporting-secrets-as-environment-variables" class="level2">
+<h2 class="anchored" data-anchor-id="exporting-secrets-as-environment-variables">Exporting secrets as environment variables</h2>
 <p>Finally, we can export all secrets from the lockbox file as environment variables. This is useful when running applications that rely on environment variables for configuration.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">secrets_export</span>(</span>
@@ -476,7 +474,6 @@ $AWS_ACCESS_KEY_ID
 </div>
 </div>
 </section>
-</section>
 <section id="enhanced-security-encrypting-your-private-key" class="level2">
 <h2 class="anchored" data-anchor-id="enhanced-security-encrypting-your-private-key">Enhanced Security: Encrypting Your Private Key</h2>
 <p>For even more security, you can encrypt your private key file itself using a passphrase. This adds an extra layer of protection - even if someone gains access to your key file, they would need to know the passphrase to use it.</p>
@@ -489,7 +486,7 @@ $AWS_ACCESS_KEY_ID
 <span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>)</span>
 <span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a><span class="co"># You will be prompted to enter a secure passphrase</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p>When you run this command, you’ll be prompted to enter a passphrase. Choose a strong, memorable passphrase.</p>
+<p>When you run this command, you’ll be prompted to enter a passphrase. Ideally, you should leave the field blank to use the randomly-generated passphrase supplied by <code>age</code>. Otherwise, make sure you choose a strong passphrase.</p>
 </section>
 <section id="step-2-remove-the-unencrypted-key-file." class="level4">
 <h4 class="anchored" data-anchor-id="step-2-remove-the-unencrypted-key-file.">Step 2: Remove the unencrypted key file.</h4>
@@ -533,8 +530,8 @@ Warning
 <li>When the <code>private</code> key used in <code>secrets_decrypt()</code> or <code>file_decrypt()</code> is itself passphrase-encrypted.</li>
 <li>When calling <code>secrets_encrypt()</code> to modify an existing <code>lockbox</code> file.</li>
 </ol>
-<p>In both cases, a file is written to disk at <code>tempfile()</code> automatically deleted using <code>on.exit()</code> and <code>unlink()</code> to ensure cleanup on function exit even if an error occurs.</p>
-<p>While this approach follows R best practices for temporary file handling, users with heightened security requirements may prefer to run <code>age</code> and <code>sops</code> commands directly from the command line to maintain full control over key file handling.</p>
+<p>In both cases, a file is written to disk at <code>tempfile()</code>, and is automatically deleted using <code>on.exit()</code> and <code>unlink()</code> to ensure cleanup on function exit even if an error occurs.</p>
+<p>While this approach follows R best practices for temporary file handling, users with heightened security requirements may prefer to run <code>age</code> and <code>sops</code> directly from the command line to maintain full control over key file handling.</p>
 </div>
 </div>
 

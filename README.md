@@ -14,16 +14,16 @@
 `lockbox` targets two main use cases:
 
 1.  *File Encryption*: R users need an easy way to encrypt and decrypt
-    files using simple, modern, secure encryption methods. The functions
-    should allow simple passwords and support key pair workflows.
-2.  *Secret Management*: Many R packages, functions, and services rely
-    on environment variables to retrieve users’ API keys and security
-    tokens (LLM APIs, AWS services, database locations, etc.). Users
-    need a secure way to store secrets in an encrypted file, and a
-    convenient way to export those secrets as environment variables.
-    Although there are solutions for this outside R, it is useful to do
-    it within to ensure that variables are accessible in the current R
-    session.
+    files using simple, modern, secure encryption methods. The package
+    supports simple passwords and support key pair workflows.
+2.  *Secrets Management*: Many R packages, functions, and services rely
+    on environment variables to retrieve users’ API keys, security
+    tokens, and assorted secrets (ex: LLM APIs, AWS services, database
+    locations, etc.). Users need a secure way to store secrets in an
+    encrypted file, and a convenient way to export those secrets as
+    environment variables. Although there are solutions for this outside
+    R, it is useful to do it within to ensure that variables are
+    accessible in the current R session.
 
 ## How?
 
@@ -42,14 +42,14 @@ designed to replace tools like GPG for most file encryption tasks.
 There are two main encryption strategies with `age`: passphrase or key
 pairs.
 
-The first is simplest. A passphrase when encrypting the file. Whenever
-we wish to decrypt the file, we are prompted to supply that same
-password.
+The first is simplest. A passphrase is assigned when encrypting the
+file. Then, whenever someone wishes to decrypt the file, they are
+prompted to supply that same password.
 
 The second strategy relies on a pair of keys:
 
-1.  *Public key*: a (shareable) *string* used for encryption.
-2.  *Private key*: a (secret) *file* for decryption.
+1.  Public key: a *shareable* string used for encryption.
+2.  Private key: a *secret* file for decryption.
 
 This situation illustrates the use of key pairs:
 
@@ -68,8 +68,9 @@ decrypt them with your private key.
 `lockbox` uses for two main purposes:
 
 1.  Organize secrets in an encrypted “lockbox” file in YAML format.
-2.  Export secrets as environment variables to other R processes access
-    to API keys, security tokens, etc.
+2.  Export the secrets held in a lockbox as environment variables, so
+    that other R processes and functions can access API keys, security
+    tokens, etc.
 
 > [!WARNING]
 >
@@ -80,18 +81,16 @@ decrypt them with your private key.
 ## Installation
 
 To use the `lockbox` package, you must first install the `age` and
-`sops` command line tools. Both tools are free and available on Windows,
-macOS, and Linux.
-
-You can find installation instructions on their respective websites:
+`sops` command line tools. Both tools are free and available for
+Windows, macOS, and Linux.
 
 - <https://age-encryption.org>
 - [SOPS website](https://getsops.io/)
 
 For detailed installation instructions, click on the links above. Most
-users will it easy to use a package manager like [Homebrew
-(MacOS)](https://brew.sh/) or [Chocolatey
-(Windows)](https://chocolatey.org/) to install these tools.
+users will find it easy to install `age` and `SOPS` using a package
+manager like [Homebrew (MacOS)](https://brew.sh/) or [Chocolatey
+(Windows).](https://chocolatey.org/)
 
 ``` sh
 # macOS
@@ -105,20 +104,19 @@ choco install sops
 # Use your distributions package manager
 ```
 
-Then, you can install the development version of `lockbox` from Github:
+You can install the development version of `lockbox` from Github:
 
 ``` r
-remotes::install_github("vincentarelbundock/lockbox")
+library(remotes)
+install_github("vincentarelbundock/lockbox")
 ```
 
-## Tutorial
-
-### Keys
+## Keys
 
 Our first step is to create a private/public key pair using the
-`key_generate.R()` function. The private key is saved to a file and
-should be kept secret. The public key can be shared and is used to
-encrypt data.
+`key_generate()` function. The private key is saved to a file and should
+be kept secret. The public key can be shared and is used to encrypt
+data.
 
 ``` r
 library(lockbox)
@@ -126,8 +124,8 @@ key <- key_generate.R("private.key")
 key
 ```
 
-    Key created:  2025-08-07 07:44:24 
-    Public key:  age147jrufcn9c6t6cwh6q3ysu9m6303qmekvdas9ymwzh39cxaa6p4qzndacd 
+    Key created:  2025-08-07 08:42:31 
+    Public key:  age1f72e726x6ks4js476dlq75v6z0p364nwas0cv56yp5xv77d4ma2qxazyl9 
     Private key: AGE-SECRET-KEY-********* 
 
 This command created a local “identity file,” which holds both the
@@ -141,10 +139,10 @@ file.exists("private.key")
 
 > [!WARNING]
 >
-> The `private.key` file contains your private key. **Do not share this
-> file**. It should be kept secret and secure.
+> **Do not share the `private.key` file**. It should be kept secret and
+> secure.
 
-### Use-case 1: Encrypting files
+## Use-case 1: Encrypting files
 
 `lockbox` can encrypt and decrypt arbitrary files. To illustrate, let’s
 create a file with some text in it.
@@ -160,8 +158,8 @@ readLines("sensitive.txt")
     [1] "Very sensitive data."
 
 Now, let’s use the public key and the `file_encrypt()` function to
-encrypt the file. A `.age` suffix is added, and the content becomes
-gibberish.
+encrypt the file. The `.age` suffix is added automatically to the file
+name, and the content becomes gibberish.
 
 ``` r
 file_encrypt(
@@ -172,11 +170,11 @@ file_encrypt(
 readLines("sensitive.txt.age")
 ```
 
-    [1] "age-encryption.org/v1"                                                                                                                        
-    [2] "-> X25519 FoP6r7PDQHx/eTEQLktbyH8Gj+Qa9NUy0UcNQbZz+Hg"                                                                                        
-    [3] "9bLyMZLGCU5Ko0yndIckkeQNuwbe4RQMeIcartGTWTM"                                                                                                  
-    [4] "--- YR2e8U1i6FRzkLF6ezc9ecfZKDHZ+wtOeuki5+983jg"                                                                                              
-    [5] "\xf5\xf1>\x975\x8d\022\xc74\xd6JQ\xf6M\xbfPK.\x95W\xf5H\xd5\xf1ֹ\xe9\xde\033\xad\x92\xb3~J\022\xbc\xbc\xec\xaa\xc8`(\x94v\xbeLv\xd8]6\xe7n\xcc"
+    [1] "age-encryption.org/v1"                                                                                                            
+    [2] "-> X25519 5fMV2TgYO0wjKxdJmc6Jh8Hoh8eHIBawfdRULYtIaFk"                                                                            
+    [3] "NTm+5w9hWIBa4Cln6g5Bl6+ZPVWGcKCBTecYde667t4"                                                                                      
+    [4] "--- Sz0W4cXAr0lIV/cQOfzFyVGcxILRBwnJALy7FXLJLag"                                                                                  
+    [5] "\xdaS\"'E0\002#\xe4\xf0.|\xc6\"\xe3:\xc3\xecx<~\xb4\xbeii>\xbd㹎@:\xdaW\xc1b\x83\xb2\xaf\xb1\xe0H\xea\xef\xe5^\177\x8b\xc1:a\xa3Z"
 
 Finally, we can decrypt the file using the private key file. The
 decrypted content is written to the specified output file.
@@ -193,7 +191,7 @@ readLines("sensitive_decrypted.txt")
 
     [1] "Very sensitive data."
 
-### Use-case 2: Storing secrets in a `lockbox` and exporting them as environment variables
+## Use-case 2: Storing secrets in a `lockbox` and exporting them as environment variables
 
 Several packages and applications require users to export secrets as
 environment variables for easy access. For example, you may need to
@@ -223,7 +221,7 @@ secrets_encrypt(
 )
 ```
 
-### Retrieving secrets from a `lockbox`
+## Retrieving secrets from a `lockbox`
 
 Now, we can retrieve all secrets using our private key file.
 
@@ -243,7 +241,7 @@ secrets_decrypt(
     $AWS_ACCESS_KEY_ID
     [1] "AKIAIOSFODNN7EXAMPLE"
 
-### Modifying secrets in a `lockbox`
+## Modifying secrets in a `lockbox`
 
 To modify existing secrets or to add new ones, we can simply call
 `secrets_encrypt()` again. In this case, however, we need to supply the
@@ -268,7 +266,7 @@ secrets_decrypt(
 
     [1] "a-new-api-key"
 
-### Exporting secrets as environment variables
+## Exporting secrets as environment variables
 
 Finally, we can export all secrets from the lockbox file as environment
 variables. This is useful when running applications that rely on
@@ -313,7 +311,9 @@ file_encrypt(
 ```
 
 When you run this command, you’ll be prompted to enter a passphrase.
-Choose a strong, memorable passphrase.
+Ideally, you should leave the field blank to use the randomly-generated
+passphrase supplied by `age`. Otherwise, make sure you choose a strong
+passphrase.
 
 #### Step 2: Remove the unencrypted key file.
 
@@ -355,11 +355,11 @@ secrets_export(
 > 2.  When calling `secrets_encrypt()` to modify an existing `lockbox`
 >     file.
 >
-> In both cases, a file is written to disk at `tempfile()` automatically
-> deleted using `on.exit()` and `unlink()` to ensure cleanup on function
-> exit even if an error occurs.
+> In both cases, a file is written to disk at `tempfile()`, and is
+> automatically deleted using `on.exit()` and `unlink()` to ensure
+> cleanup on function exit even if an error occurs.
 >
 > While this approach follows R best practices for temporary file
 > handling, users with heightened security requirements may prefer to
-> run `age` and `sops` commands directly from the command line to
-> maintain full control over key file handling.
+> run `age` and `sops` directly from the command line to maintain full
+> control over key file handling.
