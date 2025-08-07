@@ -1,20 +1,28 @@
 #' @keywords internal
 assert_age <- function() {
-    age_available <- nzchar(Sys.which("age"))
-    if (age_available) {
-        age_available <- tryCatch(
-            {
-                system("age --version", intern = TRUE, ignore.stdout = TRUE, ignore.stderr = TRUE)
-                TRUE
-            },
-            error = function(e) FALSE)
-    }
+  age_available <- nzchar(Sys.which("age"))
+  if (age_available) {
+    age_available <- tryCatch(
+      {
+        system(
+          "age --version",
+          intern = TRUE,
+          ignore.stdout = TRUE,
+          ignore.stderr = TRUE
+        )
+        TRUE
+      },
+      error = function(e) FALSE
+    )
+  }
 
-    if (!age_available) {
-        stop("age is not available. Install from https://github.com/FiloSottile/age", call. = FALSE)
-    }
+  if (!age_available) {
+    stop(
+      "age is not available. Install from https://github.com/FiloSottile/age",
+      call. = FALSE
+    )
+  }
 }
-
 
 
 #' Encrypt a file using age
@@ -37,44 +45,49 @@ assert_age <- function() {
 #' @examples
 #' \dontrun{
 #' # Encrypt with public key
-#' age_encrypt("secret.txt", public = "age1xyz...")
+#' file_encrypt("secret.txt", public = "age1xyz...")
 #'
 #' # Encrypt with passphrase (will prompt)
-#' age_encrypt("secret.txt")
+#' file_encrypt("secret.txt")
 #'
 #' # Encrypt with custom output path and armor
-#' age_encrypt("secret.txt", "encrypted.age",
+#' file_encrypt("secret.txt", "encrypted.age",
 #'     public = "age1xyz...", armor = TRUE)
 #' }
-age_encrypt <- function(input = NULL,
-                        output = if (!is.null(input)) paste0(input, ".age") else NULL,
-                        public = NULL,
-                        overwrite = FALSE,
-                        armor = FALSE) {
-    assert_age()
-    checkmate::assert_flag(overwrite)
-    checkmate::assert_file_exists(input)
-    checkmate::assert_path_for_output(output, overwrite = overwrite)
-    checkmate::assert_character(public, null.ok = TRUE)
-    checkmate::assert_flag(armor)
-    input <- normalizePath(input, mustWork = TRUE)
-    output <- normalizePath(output, mustWork = FALSE)
-    if (is.null(public)) {
-        args <- c("--passphrase", "-o", shQuote(output), shQuote(input))
-        message("Reminder: Humans are bad at generating secure passphrases.")
-    } else {
-        args <- c("-o", shQuote(output))
-        for (recipient in public) {
-            args <- c(args, "-r", shQuote(recipient))
-        }
-        if (armor) args <- c(args, "--armor")
-        args <- c(args, shQuote(input))
+file_encrypt <- function(
+  input = NULL,
+  output = if (!is.null(input)) paste0(input, ".age") else NULL,
+  public = NULL,
+  overwrite = FALSE,
+  armor = FALSE
+) {
+  assert_age()
+  checkmate::assert_flag(overwrite)
+  checkmate::assert_file_exists(input)
+  checkmate::assert_path_for_output(output, overwrite = overwrite)
+  checkmate::assert_character(public, null.ok = TRUE)
+  checkmate::assert_flag(armor)
+  input <- normalizePath(input, mustWork = TRUE)
+  output <- normalizePath(output, mustWork = FALSE)
+  if (is.null(public)) {
+    args <- c("--passphrase", "-o", shQuote(output), shQuote(input))
+    message("Reminder: Humans are bad at generating secure passphrases.")
+  } else {
+    args <- c("-o", shQuote(output))
+    for (recipient in public) {
+      args <- c(args, "-r", shQuote(recipient))
     }
-    res <- system2("age", args)
-    if (res != 0) stop("age encryption failed (exit code ", res, ")")
-    return(invisible(NULL))
+    if (armor) {
+      args <- c(args, "--armor")
+    }
+    args <- c(args, shQuote(input))
+  }
+  res <- system2("age", args)
+  if (res != 0) {
+    stop("age encryption failed (exit code ", res, ")")
+  }
+  return(invisible(NULL))
 }
-
 
 
 #' Decrypt an age-encrypted file
@@ -95,45 +108,59 @@ age_encrypt <- function(input = NULL,
 #' @examples
 #' \dontrun{
 #' # Decrypt with private key
-#' age_decrypt("secret.txt.age", "secret.txt", private = "identity.key")
+#' file_decrypt("secret.txt.age", "secret.txt", private = "identity.key")
 #'
 #' # Decrypt with passphrase (will prompt)
-#' age_decrypt("secret.txt.age", "secret.txt")
+#' file_decrypt("secret.txt.age", "secret.txt")
 #' }
-age_decrypt <- function(input = NULL,
-                        output = NULL,
-                        private = NULL,
-                        overwrite = FALSE) {
-    assert_age()
-    checkmate::assert_file_exists(input)
-    checkmate::assert_flag(overwrite)
-    checkmate::assert_path_for_output(output, overwrite = overwrite)
-    input <- normalizePath(input, mustWork = TRUE)
-    output <- normalizePath(output, mustWork = FALSE)
+file_decrypt <- function(
+  input = NULL,
+  output = NULL,
+  private = NULL,
+  overwrite = FALSE
+) {
+  assert_age()
+  checkmate::assert_file_exists(input)
+  checkmate::assert_flag(overwrite)
+  checkmate::assert_path_for_output(output, overwrite = overwrite)
+  input <- normalizePath(input, mustWork = TRUE)
+  output <- normalizePath(output, mustWork = FALSE)
 
-    if (!is.null(private)) { # no null.ok in this function
-        checkmate::assert_file_exists(private)
-        private <- normalizePath(private, mustWork = TRUE)
-    }
+  if (!is.null(private)) {
+    # no null.ok in this function
+    checkmate::assert_file_exists(private)
+    private <- normalizePath(private, mustWork = TRUE)
+  }
 
-    if (!is.null(private)) {
-        # Use identity file
-        args <- c("-d", "-i", shQuote(private), "-o", shQuote(output), shQuote(input))
-        stdin_input <- NULL
-    } else {
-        # Use passphrase
-        args <- c("--decrypt", "-o", shQuote(output), shQuote(input))
-        stdin_input <- NULL
-    }
+  if (!is.null(private)) {
+    # Use identity file
+    args <- c(
+      "-d",
+      "-i",
+      shQuote(private),
+      "-o",
+      shQuote(output),
+      shQuote(input)
+    )
+    stdin_input <- NULL
+  } else {
+    # Use passphrase
+    args <- c("--decrypt", "-o", shQuote(output), shQuote(input))
+    stdin_input <- NULL
+  }
 
-    res <- system2("age",
-        args = args,
-        input = stdin_input,
-        stdout = FALSE,
-        stderr = FALSE)
+  res <- system2(
+    "age",
+    args = args,
+    input = stdin_input,
+    stdout = FALSE,
+    stderr = FALSE
+  )
 
-    if (res != 0) stop("age decryption failed (exit code ", res, ")")
-    invisible(output)
+  if (res != 0) {
+    stop("age decryption failed (exit code ", res, ")")
+  }
+  invisible(output)
 }
 
 
@@ -158,36 +185,39 @@ age_decrypt <- function(input = NULL,
 #' @examples
 #' \dontrun{
 #' # Generate and save new key to file
-#' key <- age_keygen("my_identity.key")
+#' key <- key_generate.R("my_identity.key")
 #' print(key$public)
 #'
 #' # If file already exists, returns existing public key without overwriting
-#' existing_key <- age_keygen("my_identity.key")
+#' existing_key <- key_generate.R("my_identity.key")
 #' print(existing_key$public) # Shows existing public key
 #' }
 #'
 #' @export
-age_keygen <- function(keyfile = NULL) {
-    assert_age()
-    checkmate::assert_path_for_output(keyfile, overwrite = TRUE)
-    keyfile <- normalizePath(keyfile, mustWork = FALSE)
-    if (isTRUE(checkmate::check_file_exists(keyfile))) {
-        res <- system2("age-keygen",
-            args = c("-y", shQuote(keyfile)),
-            stdout = TRUE, stderr = TRUE)
-        out <- list("public" = res)
-        class(out) <- "lockbox_key"
-        message("Key file already exists; not overwriting.")
-        return(out)
-    } else {
-        args <- c("-o", shQuote(keyfile))
-        key <- system2("age-keygen", args = args, stdout = TRUE, stderr = TRUE)
-        key <- list(public = key[1], private = key[4])
-        key[["created"]] <- Sys.time()
-        key[["public"]] <- sub("Public key: ", "", key[["public"]])
-        class(key) <- "lockbox_key"
-        return(key)
-    }
+key_generate.R <- function(keyfile = NULL) {
+  assert_age()
+  checkmate::assert_path_for_output(keyfile, overwrite = TRUE)
+  keyfile <- normalizePath(keyfile, mustWork = FALSE)
+  if (isTRUE(checkmate::check_file_exists(keyfile))) {
+    res <- system2(
+      "age-keygen",
+      args = c("-y", shQuote(keyfile)),
+      stdout = TRUE,
+      stderr = TRUE
+    )
+    out <- list("public" = res)
+    class(out) <- "lockbox_key"
+    message("Key file already exists; not overwriting.")
+    return(out)
+  } else {
+    args <- c("-o", shQuote(keyfile))
+    key <- system2("age-keygen", args = args, stdout = TRUE, stderr = TRUE)
+    key <- list(public = key[1], private = key[4])
+    key[["created"]] <- Sys.time()
+    key[["public"]] <- sub("Public key: ", "", key[["public"]])
+    class(key) <- "lockbox_key"
+    return(key)
+  }
 }
 
 
@@ -196,11 +226,11 @@ age_keygen <- function(keyfile = NULL) {
 #' @param x A `lockbox_key` object.
 #' @export
 print.lockbox_key <- function(x, ...) {
-    if ("created" %in% names(x)) {
-        x[["created"]] <- format(x[["created"]], "%Y-%m-%d %H:%M:%S")
-        cat("Key created: ", as.character(x[["created"]]), "\n")
-    }
-    x[["public"]] <- sub("Public key: ", "", x[["public"]])
-    cat("Public key: ", paste(x[["public"]], collapse = "\n"), "\n")
-    cat("Private key: AGE-SECRET-KEY-*********", "\n")
+  if ("created" %in% names(x)) {
+    x[["created"]] <- format(x[["created"]], "%Y-%m-%d %H:%M:%S")
+    cat("Key created: ", as.character(x[["created"]]), "\n")
+  }
+  x[["public"]] <- sub("Public key: ", "", x[["public"]])
+  cat("Public key: ", paste(x[["public"]], collapse = "\n"), "\n")
+  cat("Private key: AGE-SECRET-KEY-*********", "\n")
 }

@@ -115,18 +115,18 @@ remotes::install_github("vincentarelbundock/lockbox")
 ### Keys
 
 Our first step is to create a private/public key pair using the
-`age_keygen()` function. The private key is saved to a file and should
-be kept secret. The public key can be shared and is used to encrypt
-data.
+`key_generate.R()` function. The private key is saved to a file and
+should be kept secret. The public key can be shared and is used to
+encrypt data.
 
 ``` r
 library(lockbox)
-key <- age_keygen("private.key")
+key <- key_generate.R("private.key")
 key
 ```
 
-    Key created:  2025-08-06 22:15:11 
-    Public key:  age1rukutpu2mvy0eq49j37jd80n6cejvzmuyphse9rgye58edjpwgaqf563f8 
+    Key created:  2025-08-07 07:29:47 
+    Public key:  age1mc9mamptk3ajdftdwt3nwsun6hv3dhv9q27wvnf5vsnxzhnusqms5equrt 
     Private key: AGE-SECRET-KEY-********* 
 
 This command created a local “identity file,” which holds both the
@@ -158,12 +158,12 @@ readLines("sensitive.txt")
 
     [1] "Very sensitive data."
 
-Now, let’s use the public key and the `age_encrypt()` function to
+Now, let’s use the public key and the `file_encrypt()` function to
 encrypt the file. A `.age` suffix is added, and the content becomes
 gibberish.
 
 ``` r
-age_encrypt(
+file_encrypt(
   input = "sensitive.txt",
   public = key$public
 )
@@ -171,17 +171,17 @@ age_encrypt(
 readLines("sensitive.txt.age")
 ```
 
-    [1] "age-encryption.org/v1"                                                                                                                  
-    [2] "-> X25519 j9HOa4XRWL9jgNOjc6rphOTrZ+03VAdd4ixpx9pt6UE"                                                                                  
-    [3] "6lYKPEOd/uHOjqEcb7Fz+O9cVX6Z0743IR+I5mCa2Wg"                                                                                            
-    [4] "--- i5BA4hPFAOx3squzyX0cAgwJa40wh5oyjhcW/GlqLok"                                                                                        
-    [5] "\xf0r\x88\tg@\a\xa9\xf3\xd636m\xfe\x9e]V}\xbaj\xd2%\x8ai\xa1\x89\vj\xef\xc9\xd9?cѬ\xe0\037\024\023e\xaa\016Ύ\xab\x84Q\xc3\xd8v\x87\x9ba"
+    [1] "age-encryption.org/v1"                                                                                                                                          
+    [2] "-> X25519 myM+ExWgfs0fKoXeMWuMlKRNqBVN8bVa0tQ26pHq1EQ"                                                                                                          
+    [3] "TpiCM3A7DQGZq0EUY1t97HvJp1FLJ1+Nn7QhVkMpuIs"                                                                                                                    
+    [4] "--- 0Cr2X1cUl9QsVttO9QjG6b6n9xTdGVgyTfhW4KAnmj8"                                                                                                                
+    [5] "\xf2\022\xb7\x98\xfa\xb3ζ?g\177\xedbB\xbd\x82\x81\xed\002.\xb4\xa1Ǘ\xaf\xe7\036\xe8x\xc7\xfe\xe9<\xf3\xa4\xcb\xef\xee\024\x99F}r\001\xbe\xaf\xe8+\x81R\xb1i\xc3"
 
 Finally, we can decrypt the file using the private key file. The
 decrypted content is written to the specified output file.
 
 ``` r
-age_decrypt(
+file_decrypt(
   input = "sensitive.txt.age",
   output = "sensitive_decrypted.txt",
   private = "private.key"
@@ -205,8 +205,8 @@ use a helper function to decrypt the file and export environment
 variables.
 
 First, we define a named list with the values that we wish to store
-securely. Then, we call `sops_encrypt()` to encrypt those secrets into
-our lockbox file. Again, we use the public key for encryption.
+securely. Then, we call `secrets_encrypt()` to encrypt those secrets
+into our lockbox file. Again, we use the public key for encryption.
 
 ``` r
 secrets <- list(
@@ -215,7 +215,7 @@ secrets <- list(
   AWS_ACCESS_KEY_ID = "AKIAIOSFODNN7EXAMPLE"
 )
 
-sops_encrypt(
+secrets_encrypt(
   lockbox = "lockbox.yaml",
   secrets = secrets,
   public = key$public
@@ -227,7 +227,7 @@ sops_encrypt(
 Now, we can retrieve all secrets using our private key file.
 
 ``` r
-sops_decrypt(
+secrets_decrypt(
   lockbox = "lockbox.yaml",
   private = "private.key"
 )
@@ -245,12 +245,12 @@ sops_decrypt(
 ### Modifying secrets in a `lockbox`
 
 To modify existing secrets or to add new ones, we can simply call
-`sops_encrypt()` again. In this case, however, we need to supply the
+`secrets_encrypt()` again. In this case, however, we need to supply the
 `private` key file because modifying requires us to read the existing
 secrets.
 
 ``` r
-sops_encrypt(
+secrets_encrypt(
   lockbox = "lockbox.yaml",
   secrets = list("API_KEY" = "a-new-api-key"),
   private = "private.key"
@@ -260,7 +260,7 @@ sops_encrypt(
 We see that the `API_KEY` value has indeed been updated.
 
 ``` r
-sops_decrypt(
+secrets_decrypt(
   lockbox = "lockbox.yaml",
   private = "private.key")$API_KEY
 ```
@@ -274,7 +274,7 @@ variables. This is useful when running applications that rely on
 environment variables for configuration.
 
 ``` r
-sops_export(
+secrets_export(
   lockbox = "lockbox.yaml",
   private = "private.key"
 )
@@ -304,7 +304,7 @@ passphrase to use it.
 #### Step 1: Encrypt the private key with a passphrase.
 
 ``` r
-age_encrypt(
+file_encrypt(
   input = "private.key",
   output = "private.key.age"
 )
@@ -327,13 +327,13 @@ functions. The lockbox package will automatically detect that it’s an
 encrypted key file and prompt you for the passphrase when needed.
 
 ``` r
-sops_decrypt(
+secrets_decrypt(
   lockbox = "lockbox.yaml",
   private = "private.key.age"
 )
 # You will be prompted for your passphrase
 
-sops_export(
+secrets_export(
   lockbox = "lockbox.yaml",
   private = "private.key.age"
 )

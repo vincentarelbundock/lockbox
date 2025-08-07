@@ -1,18 +1,27 @@
 #' @keywords internal
 assert_sops <- function() {
-    sops_available <- nzchar(Sys.which("sops"))
-    if (sops_available) {
-        sops_available <- tryCatch(
-            {
-                system("sops --version", intern = TRUE, ignore.stdout = TRUE, ignore.stderr = TRUE)
-                TRUE
-            },
-            error = function(e) FALSE)
-    }
+  sops_available <- nzchar(Sys.which("sops"))
+  if (sops_available) {
+    sops_available <- tryCatch(
+      {
+        system(
+          "sops --version",
+          intern = TRUE,
+          ignore.stdout = TRUE,
+          ignore.stderr = TRUE
+        )
+        TRUE
+      },
+      error = function(e) FALSE
+    )
+  }
 
-    if (!sops_available) {
-        stop("SOPS is not available. Install from https://github.com/mozilla/sops", call. = FALSE)
-    }
+  if (!sops_available) {
+    stop(
+      "SOPS is not available. Install from https://github.com/mozilla/sops",
+      call. = FALSE
+    )
+  }
 }
 
 
@@ -28,35 +37,47 @@ assert_sops <- function() {
 #' @return Character vector of command output
 #' @keywords internal
 sops_run <- function(args, private = NULL, public = NULL) {
-    env_vars <- list()
+  env_vars <- list()
 
-    if (!is.null(private)) {
-        private <- normalizePath(private, mustWork = TRUE)
-        env_vars[["SOPS_AGE_KEY_FILE"]] <- private
+  if (!is.null(private)) {
+    private <- normalizePath(private, mustWork = TRUE)
+    env_vars[["SOPS_AGE_KEY_FILE"]] <- private
+  }
+
+  if (!is.null(public)) {
+    env_vars[["SOPS_AGE_RECIPIENTS"]] <- paste(public, collapse = ",")
+  }
+
+  result <- with_env(env_vars, {
+    system2("sops", args, stdout = TRUE, stderr = TRUE)
+  })
+
+  status <- attr(result, "status")
+  if (!is.null(status) && status != 0) {
+    if (status == 128) {
+      if (!is.null(private) && any(grepl("--decrypt", args))) {
+        stop(
+          "Failed to decrypt with the provided private key. The key may be incorrect or not authorized for this file.",
+          call. = FALSE
+        )
+      } else {
+        stop(
+          "SOPS operation failed. This may be due to incorrect keys or permissions.",
+          call. = FALSE
+        )
+      }
+    } else {
+      stop(
+        "SOPS command failed with exit code ",
+        status,
+        ": ",
+        paste(result, collapse = "\n"),
+        call. = FALSE
+      )
     }
+  }
 
-    if (!is.null(public)) {
-        env_vars[["SOPS_AGE_RECIPIENTS"]] <- paste(public, collapse = ",")
-    }
-
-    result <- with_env(env_vars, {
-        system2("sops", args, stdout = TRUE, stderr = TRUE)
-    })
-
-    status <- attr(result, "status")
-    if (!is.null(status) && status != 0) {
-        if (status == 128) {
-            if (!is.null(private) && any(grepl("--decrypt", args))) {
-                stop("Failed to decrypt with the provided private key. The key may be incorrect or not authorized for this file.", call. = FALSE)
-            } else {
-                stop("SOPS operation failed. This may be due to incorrect keys or permissions.", call. = FALSE)
-            }
-        } else {
-            stop("SOPS command failed with exit code ", status, ": ", paste(result, collapse = "\n"), call. = FALSE)
-        }
-    }
-
-    return(result)
+  return(result)
 }
 
 
@@ -69,16 +90,16 @@ sops_run <- function(args, private = NULL, public = NULL) {
 #'
 #' @return Character vector of age recipient public keys
 #' @keywords internal
-sops_recipients <- function(lockbox) {
-    checkmate::assert_file_exists(lockbox)
-    lockbox <- normalizePath(lockbox, mustWork = TRUE)
-    content <- yaml::yaml.load_file(lockbox)
-    if (!is.null(content$sops) && !is.null(content$sops$age)) {
-        recipients <- sapply(content$sops$age, function(x) x$recipient)
-        return(as.character(recipients))
-    } else {
-        stop("No sops age recipients found in file: ", lockbox, call. = FALSE)
-    }
+secrets_recipients <- function(lockbox) {
+  checkmate::assert_file_exists(lockbox)
+  lockbox <- normalizePath(lockbox, mustWork = TRUE)
+  content <- yaml::yaml.load_file(lockbox)
+  if (!is.null(content$sops) && !is.null(content$sops$age)) {
+    recipients <- sapply(content$sops$age, function(x) x$recipient)
+    return(as.character(recipients))
+  } else {
+    stop("No sops age recipients found in file: ", lockbox, call. = FALSE)
+  }
 }
 
 
@@ -99,64 +120,79 @@ sops_recipients <- function(lockbox) {
 #' @examples
 #' \dontrun{
 #' # Create new encrypted file
-#' sops_encrypt(
+#' secrets_encrypt(
 #'     lockbox = "secrets.yaml",
 #'     secrets = list(API_KEY = "secret123"),
 #'     public = "age1xyz..."
 #' )
 #'
 #' # Update existing file
-#' sops_encrypt(
+#' secrets_encrypt(
 #'     lockbox = "secrets.yaml",
 #'     secrets = list(NEW_SECRET = "value"),
 #'     private = "private.key"
 #' )
 #' }
-sops_encrypt <- function(
-    lockbox = NULL,
-    secrets = NULL,
-    public = NULL,
-    private = NULL) {
-    assert_sops()
-    sanity_secrets(secrets)
-    checkmate::assert_character(public, unique = TRUE, names = "unnamed", null.ok = TRUE)
+secrets_encrypt <- function(
+  lockbox = NULL,
+  secrets = NULL,
+  public = NULL,
+  private = NULL
+) {
+  assert_sops()
+  sanity_secrets(secrets)
+  checkmate::assert_character(
+    public,
+    unique = TRUE,
+    names = "unnamed",
+    null.ok = TRUE
+  )
 
-    # Check for .yaml extension
-    if (tools::file_ext(lockbox) != "yaml") {
-        stop("lockbox file must have a .yaml extension", call. = FALSE)
+  # Check for .yaml extension
+  if (tools::file_ext(lockbox) != "yaml") {
+    stop("lockbox file must have a .yaml extension", call. = FALSE)
+  }
+
+  checkmate::assert_path_for_output(lockbox, overwrite = TRUE)
+  lockbox <- normalizePath(lockbox, mustWork = FALSE)
+
+  if (!is.null(private)) {
+    checkmate::assert_file_exists(private)
+    private <- normalizePath(private, mustWork = TRUE)
+  }
+
+  if (isTRUE(checkmate::check_file_exists(lockbox))) {
+    if (is.null(private)) {
+      stop(
+        "You must supply a `private` key location to modify an existing `lockbox`.",
+        call. = FALSE
+      )
     }
-    
-    checkmate::assert_path_for_output(lockbox, overwrite = TRUE)
-    lockbox <- normalizePath(lockbox, mustWork = FALSE)
-
-    if (!is.null(private)) {
-        checkmate::assert_file_exists(private)
-        private <- normalizePath(private, mustWork = TRUE)
+    if (!is.null(public)) {
+      stop(
+        "You cannot supply a `public` key when modifying an existing `lockbox`. Use `private` only.",
+        call. = FALSE
+      )
     }
-
-    if (isTRUE(checkmate::check_file_exists(lockbox))) {
-        if (is.null(private)) {
-            stop("You must supply a `private` key location to modify an existing `lockbox`.", call. = FALSE)
-        }
-        if (!is.null(public)) {
-            stop("You cannot supply a `public` key when modifying an existing `lockbox`. Use `private` only.", call. = FALSE)
-        }
-        public <- sops_recipients(lockbox)
-        old_secrets <- sops_decrypt(lockbox, private = private)
-        secrets <- modifyList(old_secrets, secrets)
-    } else {
-        if (is.null(public)) {
-            stop("You must supply `public` keys to create a new `lockbox`.", call. = FALSE)
-        }
+    public <- secrets_recipients(lockbox)
+    old_secrets <- secrets_decrypt(lockbox, private = private)
+    secrets <- modifyList(old_secrets, secrets)
+  } else {
+    if (is.null(public)) {
+      stop(
+        "You must supply `public` keys to create a new `lockbox`.",
+        call. = FALSE
+      )
     }
+  }
 
-    tmp <- tempfile(fileext = ".yaml")
-    yaml::write_yaml(secrets, file = tmp)
-    on.exit(unlink(tmp), add = TRUE)
-    args <- c("--encrypt", "--output", shQuote(lockbox), shQuote(tmp))
-    res <- sops_run(args, public = public)
+  tmp <- tempfile(fileext = ".yaml")
+  yaml::write_yaml(secrets, file = tmp)
+  on.exit(unlink(tmp), add = TRUE)
+  args <- c("--encrypt", "--output", shQuote(lockbox), shQuote(tmp))
+  res <- sops_run(args, public = public)
 
-    invisible(NULL)
+  invisible(NULL)
 }
 
 
@@ -175,47 +211,51 @@ sops_encrypt <- function(
 #' @examples
 #' \dontrun{
 #' # Decrypt with regular private key
-#' secrets <- sops_decrypt("secrets.yaml", "private.key")
+#' secrets <- secrets_decrypt("secrets.yaml", "private.key")
 #'
 #' # Decrypt with password-protected private key (will prompt for password)
-#' secrets <- sops_decrypt("secrets.yaml", "private.key.age")
+#' secrets <- secrets_decrypt("secrets.yaml", "private.key.age")
 #'
 #' # Access individual secrets
 #' api_key <- secrets$API_KEY
 #' }
-sops_decrypt <- function(
-    lockbox = NULL,
-    private = NULL) {
-    assert_sops()
-    
-    # Check for .yaml extension
-    if (tools::file_ext(lockbox) != "yaml") {
-        stop("lockbox file must have a .yaml extension", call. = FALSE)
-    }
-    
-    checkmate::assert_file_exists(lockbox)
-    checkmate::assert_file_exists(private)
+secrets_decrypt <- function(
+  lockbox = NULL,
+  private = NULL
+) {
+  assert_sops()
 
-    lockbox <- normalizePath(lockbox, mustWork = TRUE)
-    private <- normalizePath(private, mustWork = TRUE)
+  # Check for .yaml extension
+  if (tools::file_ext(lockbox) != "yaml") {
+    stop("lockbox file must have a .yaml extension", call. = FALSE)
+  }
 
-    # Check if private file is a password-protected age file
-    if (isTRUE(check_age_file(private))) {
-        tf <- tempfile(fileext = ".yaml")
-        on.exit(unlink(tf), add = TRUE)
-        age_decrypt(input = private, output = tf)
-        private <- tf
-    }
+  checkmate::assert_file_exists(lockbox)
+  checkmate::assert_file_exists(private)
 
-    args <- c("decrypt", "--input-type", "yaml", shQuote(lockbox))
-    res <- sops_run(args, private = private)
+  lockbox <- normalizePath(lockbox, mustWork = TRUE)
+  private <- normalizePath(private, mustWork = TRUE)
 
-    # Check if decryption failed by examining the output
-    if (length(res) == 0 || all(nchar(res) == 0)) {
-        stop("Decryption returned empty output. The private key may be incorrect or not authorized for this file.", call. = FALSE)
-    }
-    res <- yaml::yaml.load(res)
-    return(res)
+  # Check if private file is a password-protected age file
+  if (isTRUE(check_age_file(private))) {
+    tf <- tempfile(fileext = ".yaml")
+    on.exit(unlink(tf), add = TRUE)
+    file_decrypt(input = private, output = tf)
+    private <- tf
+  }
+
+  args <- c("decrypt", "--input-type", "yaml", shQuote(lockbox))
+  res <- sops_run(args, private = private)
+
+  # Check if decryption failed by examining the output
+  if (length(res) == 0 || all(nchar(res) == 0)) {
+    stop(
+      "Decryption returned empty output. The private key may be incorrect or not authorized for this file.",
+      call. = FALSE
+    )
+  }
+  res <- yaml::yaml.load(res)
+  return(res)
 }
 
 
@@ -234,28 +274,29 @@ sops_decrypt <- function(
 #' @examples
 #' \dontrun{
 #' # Export all secrets as environment variables
-#' sops_export("secrets.yaml", "private.key")
+#' secrets_export("secrets.yaml", "private.key")
 #'
 #' # Now secrets are available as environment variables
 #' api_key <- Sys.getenv("API_KEY")
 #' }
-sops_export <- function(
-    lockbox = NULL,
-    private = NULL) {
-    assert_sops()
-    checkmate::assert_file_exists(lockbox)
-    checkmate::assert_file_exists(private)
-    lockbox <- normalizePath(lockbox, mustWork = TRUE)
-    private <- normalizePath(private, mustWork = TRUE)
+secrets_export <- function(
+  lockbox = NULL,
+  private = NULL
+) {
+  assert_sops()
+  checkmate::assert_file_exists(lockbox)
+  checkmate::assert_file_exists(private)
+  lockbox <- normalizePath(lockbox, mustWork = TRUE)
+  private <- normalizePath(private, mustWork = TRUE)
 
-    # Decrypt the secrets and set them as environment variables
-    secrets <- sops_decrypt(lockbox = lockbox, private = private)
+  # Decrypt the secrets and set them as environment variables
+  secrets <- secrets_decrypt(lockbox = lockbox, private = private)
 
-    # Set each secret as an environment variable
-    for (name in names(secrets)) {
-        do.call("Sys.setenv", setNames(list(secrets[[name]]), name))
-    }
+  # Set each secret as an environment variable
+  for (name in names(secrets)) {
+    do.call("Sys.setenv", setNames(list(secrets[[name]]), name))
+  }
 
-    # Return the names of the exported variables
-    invisible(names(secrets))
+  # Return the names of the exported variables
+  invisible(names(secrets))
 }

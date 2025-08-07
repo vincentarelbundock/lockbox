@@ -1,4 +1,4 @@
-# lockbox: File Encryption and Secrets Management in R
+# lockbox: Simple File Encryption and Secrets Management in R
 
 > Secure file encryption and secret management for R using modern cryptographic tools. Provides functions to encrypt/decrypt files with 'age' and manage secrets in encrypted YAML files with 'SOPS'. Secrets can be easily exported as environment variables for use with APIs and services.
 
@@ -83,11 +83,11 @@ remotes::install_github("vincentarelbundock/lockbox")
 
 ### Keys
 
-Our first step is to create a private/public key pair using the `age_keygen()` function. The private key is saved to a file and should be kept secret. The public key can be shared and is used to encrypt data.
+Our first step is to create a private/public key pair using the `key_generate.R()` function. The private key is saved to a file and should be kept secret. The public key can be shared and is used to encrypt data.
 
 ```{r}
 library(lockbox)
-key <- age_keygen("private.key")
+key <- key_generate.R("private.key")
 key
 ```
 
@@ -113,11 +113,11 @@ cat("Very sensitive data.\n", file = "sensitive.txt")
 readLines("sensitive.txt")
 ```
 
-Now, let's use the public key and the `age_encrypt()` function to encrypt the file. A `.age` suffix is added, and the content becomes gibberish.
+Now, let's use the public key and the `file_encrypt()` function to encrypt the file. A `.age` suffix is added, and the content becomes gibberish.
 
 ```{r}
 #| warning: false
-age_encrypt(
+file_encrypt(
   input = "sensitive.txt",
   public = key$public
 )
@@ -128,7 +128,7 @@ readLines("sensitive.txt.age")
 Finally, we can decrypt the file using the private key file. The decrypted content is written to the specified output file.
 
 ```{r}
-age_decrypt(
+file_decrypt(
   input = "sensitive.txt.age",
   output = "sensitive_decrypted.txt",
   private = "private.key"
@@ -143,7 +143,7 @@ Several packages and applications require users to export secrets as environment
 
 Generally speaking, we do *not* want to store those secrets in plain text files. Instead, we can store them in an encrypted YAML file, and use a helper function to decrypt the file and export environment variables. 
 
-First, we define a named list with the values that we wish to store securely. Then, we call `sops_encrypt()` to encrypt those secrets into our lockbox file. Again, we use the public key for encryption.
+First, we define a named list with the values that we wish to store securely. Then, we call `secrets_encrypt()` to encrypt those secrets into our lockbox file. Again, we use the public key for encryption.
 
 ```{r}
 secrets <- list(
@@ -152,7 +152,7 @@ secrets <- list(
   AWS_ACCESS_KEY_ID = "AKIAIOSFODNN7EXAMPLE"
 )
 
-sops_encrypt(
+secrets_encrypt(
   lockbox = "lockbox.yaml",
   secrets = secrets,
   public = key$public
@@ -164,7 +164,7 @@ sops_encrypt(
 Now, we can retrieve all secrets using our private key file.
 
 ```{r}
-sops_decrypt(
+secrets_decrypt(
   lockbox = "lockbox.yaml",
   private = "private.key"
 )
@@ -172,10 +172,10 @@ sops_decrypt(
 
 ### Modifying secrets in a `lockbox`
 
-To modify existing secrets or to add new ones, we can simply call `sops_encrypt()` again. In this case, however, we need to supply the `private` key file because modifying requires us to read the existing secrets.
+To modify existing secrets or to add new ones, we can simply call `secrets_encrypt()` again. In this case, however, we need to supply the `private` key file because modifying requires us to read the existing secrets.
 
 ```{r}
-sops_encrypt(
+secrets_encrypt(
   lockbox = "lockbox.yaml",
   secrets = list("API_KEY" = "a-new-api-key"),
   private = "private.key"
@@ -185,7 +185,7 @@ sops_encrypt(
 We see that the `API_KEY` value has indeed been updated.
 
 ```{r}
-sops_decrypt(
+secrets_decrypt(
   lockbox = "lockbox.yaml",
   private = "private.key")$API_KEY
 ```
@@ -195,7 +195,7 @@ sops_decrypt(
 Finally, we can export all secrets from the lockbox file as environment variables. This is useful when running applications that rely on environment variables for configuration.
 
 ```{r}
-sops_export(
+secrets_export(
   lockbox = "lockbox.yaml",
   private = "private.key"
 )
@@ -216,7 +216,7 @@ For even more security, you can encrypt your private key file itself using a pas
 
 ```{r}
 #| eval: false
-age_encrypt(
+file_encrypt(
   input = "private.key",
   output = "private.key.age"
 )
@@ -238,13 +238,13 @@ Now you can use your password-protected key file with all the same functions. Th
 
 ```{r}
 #| eval: false
-sops_decrypt(
+secrets_decrypt(
   lockbox = "lockbox.yaml",
   private = "private.key.age"
 )
 # You will be prompted for your passphrase
 
-sops_export(
+secrets_export(
   lockbox = "lockbox.yaml",
   private = "private.key.age"
 )
@@ -256,11 +256,14 @@ sops_export(
 ::::{.callout-warning}
 **Temporary File Handling**
 
-When using password-protected private key files (`.age` files), `lockbox` temporarily decrypts these keys to disk using `tempfile()` so that SOPS can read them. These temporary files are automatically deleted using `on.exit()` to ensure cleanup even if an error occurs.
+There are two cases where `lockbox` creates temporary files with sensitive data:
+
+1. When the `private` key used in `secrets_decrypt()` or `file_decrypt()` is itself passphrase-encrypted.
+2. When calling `secrets_encrypt()` to modify an existing `lockbox` file. 
+
+In both cases, a file is written to disk at `tempfile()` automatically deleted using `on.exit()` and `unlink()` to ensure cleanup on function exit even if an error occurs.
 
 While this approach follows R best practices for temporary file handling, users with heightened security requirements may prefer to run `age` and `sops` commands directly from the command line to maintain full control over key file handling.
-
-For most users, the temporary file approach provides a good balance of security and usability.
 ::::
 
 ```{r}
