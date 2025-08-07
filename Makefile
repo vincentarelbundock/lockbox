@@ -28,3 +28,5 @@ website: install ## render vignettes and website
 	rm -rf _quarto
 	rm -rf docs
 	Rscript -e "altdoc::render_docs(verbose = TRUE, freeze = FALSE)"
+	mkdir -p docs
+	mv _quarto/_site/* docs/
