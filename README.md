@@ -1,12 +1,13 @@
 
 
-# lockbox: File Encryption and Secrets Management in R
+# lockbox: Simple File Encryption and Secrets Management in R
 
-> Secure file encryption and secret management for R using modern
+> Simple file encryption and secret management for R using modern
 > cryptographic tools. Provides functions to encrypt/decrypt files with
 > ‘age’ and manage secrets in encrypted YAML files with ‘SOPS’. Secrets
 > can be easily exported as environment variables for use with APIs and
-> services.
+> services. Supports both file-based and in-memory key management
+> workflows.
 
 ## Why?
 
@@ -125,8 +126,8 @@ key <- key_generate.R("private.key")
 key
 ```
 
-    Key created:  2025-08-07 07:29:47 
-    Public key:  age1mc9mamptk3ajdftdwt3nwsun6hv3dhv9q27wvnf5vsnxzhnusqms5equrt 
+    Key created:  2025-08-07 07:44:24 
+    Public key:  age147jrufcn9c6t6cwh6q3ysu9m6303qmekvdas9ymwzh39cxaa6p4qzndacd 
     Private key: AGE-SECRET-KEY-********* 
 
 This command created a local “identity file,” which holds both the
@@ -171,11 +172,11 @@ file_encrypt(
 readLines("sensitive.txt.age")
 ```
 
-    [1] "age-encryption.org/v1"                                                                                                                                          
-    [2] "-> X25519 myM+ExWgfs0fKoXeMWuMlKRNqBVN8bVa0tQ26pHq1EQ"                                                                                                          
-    [3] "TpiCM3A7DQGZq0EUY1t97HvJp1FLJ1+Nn7QhVkMpuIs"                                                                                                                    
-    [4] "--- 0Cr2X1cUl9QsVttO9QjG6b6n9xTdGVgyTfhW4KAnmj8"                                                                                                                
-    [5] "\xf2\022\xb7\x98\xfa\xb3ζ?g\177\xedbB\xbd\x82\x81\xed\002.\xb4\xa1Ǘ\xaf\xe7\036\xe8x\xc7\xfe\xe9<\xf3\xa4\xcb\xef\xee\024\x99F}r\001\xbe\xaf\xe8+\x81R\xb1i\xc3"
+    [1] "age-encryption.org/v1"                                                                                                                        
+    [2] "-> X25519 FoP6r7PDQHx/eTEQLktbyH8Gj+Qa9NUy0UcNQbZz+Hg"                                                                                        
+    [3] "9bLyMZLGCU5Ko0yndIckkeQNuwbe4RQMeIcartGTWTM"                                                                                                  
+    [4] "--- YR2e8U1i6FRzkLF6ezc9ecfZKDHZ+wtOeuki5+983jg"                                                                                              
+    [5] "\xf5\xf1>\x975\x8d\022\xc74\xd6JQ\xf6M\xbfPK.\x95W\xf5H\xd5\xf1ֹ\xe9\xde\033\xad\x92\xb3~J\022\xbc\xbc\xec\xaa\xc8`(\x94v\xbeLv\xd8]6\xe7n\xcc"
 
 Finally, we can decrypt the file using the private key file. The
 decrypted content is written to the specified output file.
@@ -346,15 +347,19 @@ secrets_export(
 >
 > **Temporary File Handling**
 >
-> When using password-protected private key files (`.age` files),
-> `lockbox` temporarily decrypts these keys to disk using `tempfile()`
-> so that SOPS can read them. These temporary files are automatically
-> deleted using `on.exit()` to ensure cleanup even if an error occurs.
+> There are two cases where `lockbox` creates temporary files with
+> sensitive data:
+>
+> 1.  When the `private` key used in `secrets_decrypt()` or
+>     `file_decrypt()` is itself passphrase-encrypted.
+> 2.  When calling `secrets_encrypt()` to modify an existing `lockbox`
+>     file.
+>
+> In both cases, a file is written to disk at `tempfile()` automatically
+> deleted using `on.exit()` and `unlink()` to ensure cleanup on function
+> exit even if an error occurs.
 >
 > While this approach follows R best practices for temporary file
 > handling, users with heightened security requirements may prefer to
 > run `age` and `sops` commands directly from the command line to
 > maintain full control over key file handling.
->
-> For most users, the temporary file approach provides a good balance of
-> security and usability.

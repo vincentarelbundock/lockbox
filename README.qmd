@@ -1,6 +1,6 @@
 # lockbox: Simple File Encryption and Secrets Management in R
 
-> Secure file encryption and secret management for R using modern cryptographic tools. Provides functions to encrypt/decrypt files with 'age' and manage secrets in encrypted YAML files with 'SOPS'. Secrets can be easily exported as environment variables for use with APIs and services.
+> Simple file encryption and secret management for R using modern cryptographic tools. Provides functions to encrypt/decrypt files with 'age' and manage secrets in encrypted YAML files with 'SOPS'. Secrets can be easily exported as environment variables for use with APIs and services. Supports both file-based and in-memory key management workflows.
 
 ## Why?
 
