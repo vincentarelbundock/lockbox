@@ -1,7 +1,7 @@
 Package: lockbox
 Type: Package
 Title: Simple File Encryption and Secrets Management in R
-Description: Simple file encryption and secret management for R using modern cryptographic tools. Provides functions to encrypt/decrypt files with 'age' and manage secrets in encrypted YAML files with 'SOPS'. Secrets can be easily exported as environment variables for use with APIs and services. Supports both file-based and in-memory key management workflows.
+Description: Simple file encryption and secrets management for R using modern cryptographic tools. Provides functions to encrypt/decrypt files with 'age' and manage secrets in encrypted YAML files with 'SOPS'. Secrets can be easily exported as environment variables for use with APIs and services. Supports both file-based and in-memory key management workflows.
 Version: 0.0.1
 URL: https://vincentarelbundock.github.io/lockbox
 BugReports: https://github.com/vincentarelbundock/lockbox/issues
