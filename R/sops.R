@@ -31,6 +31,7 @@ sops_run <- function(args, private = NULL, public = NULL) {
     env_vars <- list()
 
     if (!is.null(private)) {
+        private <- normalizePath(private, mustWork = TRUE)
         env_vars[["SOPS_AGE_KEY_FILE"]] <- private
     }
 
@@ -70,6 +71,7 @@ sops_run <- function(args, private = NULL, public = NULL) {
 #' @keywords internal
 sops_recipients <- function(lockbox) {
     checkmate::assert_file_exists(lockbox)
+    lockbox <- normalizePath(lockbox, mustWork = TRUE)
     content <- yaml::yaml.load_file(lockbox)
     if (!is.null(content$sops) && !is.null(content$sops$age)) {
         recipients <- sapply(content$sops$age, function(x) x$recipient)
@@ -115,12 +117,17 @@ sops_encrypt <- function(
     secrets = NULL,
     public = NULL,
     private = NULL) {
-    # Sanity checks
     assert_sops()
-    checkmate::assert_path_for_output(lockbox, overwrite = TRUE)
-    checkmate::assert_character(public, unique = TRUE, names = "unnamed", null.ok = TRUE)
-    if (!is.null(private)) checkmate::assert_file_exists(private)
     sanity_secrets(secrets)
+    checkmate::assert_character(public, unique = TRUE, names = "unnamed", null.ok = TRUE)
+
+    checkmate::assert_path_for_output(lockbox, overwrite = TRUE)
+    lockbox <- normalizePath(lockbox, mustWork = FALSE)
+
+    if (!is.null(private)) {
+        checkmate::assert_file_exists(private)
+        private <- normalizePath(private, mustWork = TRUE)
+    }
 
     if (isTRUE(checkmate::check_file_exists(lockbox))) {
         if (is.null(private)) {
@@ -178,6 +185,9 @@ sops_decrypt <- function(
     checkmate::assert_file_exists(lockbox)
     checkmate::assert_file_exists(private)
 
+    lockbox <- normalizePath(lockbox, mustWork = TRUE)
+    private <- normalizePath(private, mustWork = TRUE)
+
     # Check if private file is a password-protected age file
     if (isTRUE(check_age_file(private))) {
         tf <- tempfile(fileext = ".yaml")
@@ -224,6 +234,8 @@ sops_export <- function(
     assert_sops()
     checkmate::assert_file_exists(lockbox)
     checkmate::assert_file_exists(private)
+    lockbox <- normalizePath(lockbox, mustWork = TRUE)
+    private <- normalizePath(private, mustWork = TRUE)
 
     # Decrypt the secrets and set them as environment variables
     secrets <- sops_decrypt(lockbox = lockbox, private = private)

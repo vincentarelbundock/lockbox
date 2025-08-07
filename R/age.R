@@ -57,6 +57,8 @@ age_encrypt <- function(input = NULL,
     checkmate::assert_path_for_output(output, overwrite = overwrite)
     checkmate::assert_character(public, null.ok = TRUE)
     checkmate::assert_flag(armor)
+    input <- normalizePath(input, mustWork = TRUE)
+    output <- normalizePath(output, mustWork = FALSE)
     if (is.null(public)) {
         args <- c("--passphrase", "-o", shQuote(output), shQuote(input))
         message("Reminder: Humans are bad at generating secure passphrases.")
@@ -106,10 +108,13 @@ age_decrypt <- function(input = NULL,
     checkmate::assert_file_exists(input)
     checkmate::assert_flag(overwrite)
     checkmate::assert_path_for_output(output, overwrite = overwrite)
+    input <- normalizePath(input, mustWork = TRUE)
+    output <- normalizePath(output, mustWork = FALSE)
+
     if (!is.null(private)) { # no null.ok in this function
         checkmate::assert_file_exists(private)
+        private <- normalizePath(private, mustWork = TRUE)
     }
-
 
     if (!is.null(private)) {
         # Use identity file
@@ -143,10 +148,10 @@ age_decrypt <- function(input = NULL,
 #'   The file will contain both public and private key information.
 #'
 #' @return A `lockbox_key` object containing:
-#'   - `$public`: The public key (age recipient identifier)  
+#'   - `$public`: The public key (age recipient identifier)
 #'   - `$private`: The private key (only for newly created keys)
 #'   - `$created`: Timestamp of key creation (only for newly created keys)
-#'   
+#'
 #'   If the key file already exists, returns a `lockbox_key` object with only
 #'   the `$public` component and displays a message about not overwriting.
 #'
@@ -158,13 +163,14 @@ age_decrypt <- function(input = NULL,
 #'
 #' # If file already exists, returns existing public key without overwriting
 #' existing_key <- age_keygen("my_identity.key")
-#' print(existing_key$public)  # Shows existing public key
+#' print(existing_key$public) # Shows existing public key
 #' }
 #'
 #' @export
 age_keygen <- function(keyfile = NULL) {
     assert_age()
     checkmate::assert_path_for_output(keyfile, overwrite = TRUE)
+    keyfile <- normalizePath(keyfile, mustWork = FALSE)
     if (isTRUE(checkmate::check_file_exists(keyfile))) {
         res <- system2("age-keygen",
             args = c("-y", shQuote(keyfile)),
