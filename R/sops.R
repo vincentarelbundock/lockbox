@@ -121,6 +121,11 @@ sops_encrypt <- function(
     sanity_secrets(secrets)
     checkmate::assert_character(public, unique = TRUE, names = "unnamed", null.ok = TRUE)
 
+    # Check for .yaml extension
+    if (tools::file_ext(lockbox) != "yaml") {
+        stop("lockbox file must have a .yaml extension", call. = FALSE)
+    }
+    
     checkmate::assert_path_for_output(lockbox, overwrite = TRUE)
     lockbox <- normalizePath(lockbox, mustWork = FALSE)
 
@@ -182,6 +187,12 @@ sops_decrypt <- function(
     lockbox = NULL,
     private = NULL) {
     assert_sops()
+    
+    # Check for .yaml extension
+    if (tools::file_ext(lockbox) != "yaml") {
+        stop("lockbox file must have a .yaml extension", call. = FALSE)
+    }
+    
     checkmate::assert_file_exists(lockbox)
     checkmate::assert_file_exists(private)
 
@@ -196,7 +207,7 @@ sops_decrypt <- function(
         private <- tf
     }
 
-    args <- c("--decrypt", shQuote(lockbox))
+    args <- c("decrypt", "--input-type", "yaml", shQuote(lockbox))
     res <- sops_run(args, private = private)
 
     # Check if decryption failed by examining the output
