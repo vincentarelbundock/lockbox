@@ -27,5 +27,4 @@ test: install ## test
 website: install ## render vignettes and website
 	rm -rf _quarto
 	rm -rf docs
-	Rscript -e "altdoc::render_docs(verbose = TRUE, freeze = TRUE)"
-	cp -r man/figures docs/man/
+	Rscript -e "altdoc::render_docs(verbose = TRUE, freeze = FALSE)"

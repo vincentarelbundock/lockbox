@@ -19,24 +19,32 @@ secrets_encrypt(lockbox = NULL, secrets = NULL, public = NULL, private = NULL)
 Invisible NULL
 }
 \description{
-Creates or updates a SOPS-encrypted file with secrets. For new files,
+Creates or updates a SOPS-managed and age-encrypted file with secrets. For new files,
 requires public age keys. For existing files, requires the private key
 to decrypt and re-encrypt with new secrets merged in.
 }
 \examples{
 \dontrun{
-# Create new encrypted file
+# Generate a key pair
+key <- key_generate.R("private.key")
+
+# Create new encrypted lockbox file
+secrets <- list(
+  API_KEY = "your-api-key-here",
+  DATABASE_URL = "postgresql://user:pass@host:5432/db",
+  AWS_ACCESS_KEY_ID = "AKIAIOSFODNN7EXAMPLE"
+)
 secrets_encrypt(
-    lockbox = "secrets.yaml",
-    secrets = list(API_KEY = "secret123"),
-    public = "age1xyz..."
+  lockbox = "lockbox.yaml",
+  secrets = secrets,
+  public = key$public
 )
 
-# Update existing file
+# Update existing lockbox file
 secrets_encrypt(
-    lockbox = "secrets.yaml",
-    secrets = list(NEW_SECRET = "value"),
-    private = "private.key"
+  lockbox = "lockbox.yaml",
+  secrets = list(API_KEY = "a-new-api-key"),
+  private = "private.key"
 )
 }
 }

@@ -105,7 +105,7 @@ secrets_recipients <- function(lockbox) {
 
 #' Encrypt secrets using SOPS
 #'
-#' Creates or updates a SOPS-encrypted file with secrets. For new files,
+#' Creates or updates a SOPS-managed and age-encrypted file with secrets. For new files,
 #' requires public age keys. For existing files, requires the private key
 #' to decrypt and re-encrypt with new secrets merged in.
 #'
@@ -119,26 +119,33 @@ secrets_recipients <- function(lockbox) {
 #'
 #' @examples
 #' \dontrun{
-#' # Create new encrypted file
+#' # Generate a key pair
+#' key <- key_generate.R("private.key")
+#'
+#' # Create new encrypted lockbox file
+#' secrets <- list(
+#'   API_KEY = "your-api-key-here",
+#'   DATABASE_URL = "postgresql://user:pass@host:5432/db",
+#'   AWS_ACCESS_KEY_ID = "AKIAIOSFODNN7EXAMPLE"
+#' )
 #' secrets_encrypt(
-#'     lockbox = "secrets.yaml",
-#'     secrets = list(API_KEY = "secret123"),
-#'     public = "age1xyz..."
+#'   lockbox = "lockbox.yaml",
+#'   secrets = secrets,
+#'   public = key$public
 #' )
 #'
-#' # Update existing file
+#' # Update existing lockbox file
 #' secrets_encrypt(
-#'     lockbox = "secrets.yaml",
-#'     secrets = list(NEW_SECRET = "value"),
-#'     private = "private.key"
+#'   lockbox = "lockbox.yaml",
+#'   secrets = list(API_KEY = "a-new-api-key"),
+#'   private = "private.key"
 #' )
 #' }
 secrets_encrypt <- function(
-  lockbox = NULL,
-  secrets = NULL,
-  public = NULL,
-  private = NULL
-) {
+    lockbox = NULL,
+    secrets = NULL,
+    public = NULL,
+    private = NULL) {
   assert_sops()
   sanity_secrets(secrets)
   checkmate::assert_character(
@@ -211,18 +218,26 @@ secrets_encrypt <- function(
 #' @examples
 #' \dontrun{
 #' # Decrypt with regular private key
-#' secrets <- secrets_decrypt("secrets.yaml", "private.key")
+#' secrets_decrypt(
+#'   lockbox = "lockbox.yaml",
+#'   private = "private.key"
+#' )
 #'
 #' # Decrypt with password-protected private key (will prompt for password)
-#' secrets <- secrets_decrypt("secrets.yaml", "private.key.age")
+#' secrets_decrypt(
+#'   lockbox = "lockbox.yaml",
+#'   private = "private.key.age"
+#' )
 #'
 #' # Access individual secrets
-#' api_key <- secrets$API_KEY
+#' secrets_decrypt(
+#'   lockbox = "lockbox.yaml",
+#'   private = "private.key"
+#' )$API_KEY
 #' }
 secrets_decrypt <- function(
-  lockbox = NULL,
-  private = NULL
-) {
+    lockbox = NULL,
+    private = NULL) {
   assert_sops()
 
   # Check for .yaml extension
@@ -274,15 +289,18 @@ secrets_decrypt <- function(
 #' @examples
 #' \dontrun{
 #' # Export all secrets as environment variables
-#' secrets_export("secrets.yaml", "private.key")
+#' secrets_export(
+#'   lockbox = "lockbox.yaml",
+#'   private = "private.key"
+#' )
 #'
 #' # Now secrets are available as environment variables
-#' api_key <- Sys.getenv("API_KEY")
+#' Sys.getenv("API_KEY")
+#' Sys.getenv("DATABASE_URL")
 #' }
 secrets_export <- function(
-  lockbox = NULL,
-  private = NULL
-) {
+    lockbox = NULL,
+    private = NULL) {
   assert_sops()
   checkmate::assert_file_exists(lockbox)
   checkmate::assert_file_exists(private)

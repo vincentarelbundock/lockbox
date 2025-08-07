@@ -22,12 +22,21 @@ for the password when needed.
 \examples{
 \dontrun{
 # Decrypt with regular private key
-secrets <- secrets_decrypt("secrets.yaml", "private.key")
+secrets_decrypt(
+  lockbox = "lockbox.yaml",
+  private = "private.key"
+)
 
 # Decrypt with password-protected private key (will prompt for password)
-secrets <- secrets_decrypt("secrets.yaml", "private.key.age")
+secrets_decrypt(
+  lockbox = "lockbox.yaml",
+  private = "private.key.age"
+)
 
 # Access individual secrets
-api_key <- secrets$API_KEY
+secrets_decrypt(
+  lockbox = "lockbox.yaml",
+  private = "private.key"
+)$API_KEY
 }
 }

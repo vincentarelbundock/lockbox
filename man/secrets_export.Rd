@@ -22,9 +22,13 @@ with the same name.
 \examples{
 \dontrun{
 # Export all secrets as environment variables
-secrets_export("secrets.yaml", "private.key")
+secrets_export(
+  lockbox = "lockbox.yaml",
+  private = "private.key"
+)
 
 # Now secrets are available as environment variables
-api_key <- Sys.getenv("API_KEY")
+Sys.getenv("API_KEY")
+Sys.getenv("DATABASE_URL")
 }
 }
