@@ -29,8 +29,9 @@ expect_true(file.size(encrypted_armor) > 0)
 # Note: Size comparison may vary depending on file content and age implementation
 
 # Test error cases
-expect_error(file_encrypt("nonexistent.txt", public = key),
-             "does not exist")
+expect_error(
+    file_encrypt("nonexistent.txt", public = key),
+    "does not exist")
 
 # Test overwrite protection (file_encrypt now never overwrites)
 expect_error(file_encrypt(input_file, encrypted_file, public = key))
@@ -56,6 +57,24 @@ expect_equal(trimws(decrypted_single), "Hello, World!")
 # Note: Passphrase encryption tests are skipped because they require interactive input
 # In a real test environment, you would need to mock getPass::getPass() or test manually
 
+# Test creating two different keys, encrypting for both, and decrypting with both
+alice_key_file <- file.path(test_dir, "alice.key")
+bob_key_file <- file.path(test_dir, "bob.key")
+alice_key <- key_generate(alice_key_file)
+bob_key <- key_generate(bob_key_file)
+
+# Encrypt for both recipients
+dual_encrypted <- file.path(test_dir, "dual.age")
+file_encrypt(input_file, dual_encrypted, public = c(alice_key, bob_key))
+
+# Both keys should decrypt to same content
+alice_result <- file_decrypt(dual_encrypted, output = NULL, private = alice_key_file)
+bob_result <- file_decrypt(dual_encrypted, output = NULL, private = bob_key_file)
+expect_identical(alice_result, bob_result)
+
 # Clean up
-unlink(c(input_file, encrypted_file, encrypted_armor, 
-         key_file, key2_file, multi_encrypted, single_recipient), force = TRUE)
+unlink(c(
+    input_file, encrypted_file, encrypted_armor,
+    key_file, key2_file, multi_encrypted, single_recipient,
+    alice_key_file, bob_key_file, dual_encrypted), force = TRUE)
+
