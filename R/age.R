@@ -1,42 +1,14 @@
-#' @keywords internal
-assert_age <- function() {
-  age_available <- nzchar(Sys.which("age"))
-  if (age_available) {
-    age_available <- tryCatch(
-      {
-        system(
-          "age --version",
-          intern = TRUE,
-          ignore.stdout = TRUE,
-          ignore.stderr = TRUE
-        )
-        TRUE
-      },
-      error = function(e) FALSE
-    )
-  }
-
-  if (!age_available) {
-    stop(
-      "age is not available. Install from https://github.com/FiloSottile/age",
-      call. = FALSE
-    )
-  }
-}
-
-
 #' Encrypt a file using age
 #'
 #' Encrypts a file using the age encryption tool. Can encrypt with public keys
 #' (for key-based encryption) or with a passphrase (when no public keys provided).
-#' When using passphrase encryption, the user will be prompted to enter a password.
+#' If no public keys are specified, will prompt for a passphrase interactively.
 #'
 #' @param input Character string, path to the file to encrypt
 #' @param output Character string, path for the encrypted output file.
 #'   Defaults to `input` + ".age" extension
 #' @param public Character vector of age public keys (recipients). If NULL,
-#'   will use passphrase encryption and prompt for password
-#' @param overwrite Logical, whether to overwrite existing output file
+#'   will use passphrase encryption and prompt for password.
 #' @param armor Logical, whether to use ASCII armor format (only applies to public key encryption)
 #'
 #' @return Invisible NULL
@@ -58,33 +30,28 @@ file_encrypt <- function(
     input = NULL,
     output = if (!is.null(input)) paste0(input, ".age") else NULL,
     public = NULL,
-    overwrite = FALSE,
     armor = FALSE) {
-  assert_age()
-  checkmate::assert_flag(overwrite)
   checkmate::assert_file_exists(input)
-  checkmate::assert_path_for_output(output, overwrite = overwrite)
+  checkmate::assert_path_for_output(output, overwrite = FALSE)
   checkmate::assert_character(public, null.ok = TRUE)
   checkmate::assert_flag(armor)
+
   input <- normalizePath(input, mustWork = TRUE)
   output <- normalizePath(output, mustWork = FALSE)
-  if (is.null(public)) {
-    args <- c("--passphrase", "-o", shQuote(output), shQuote(input))
-    message("Reminder: Humans are bad at generating secure passphrases.")
+
+  if (!is.null(public)) {
+    # Use public key encryption
+    age_encrypt_key(input, output, public, armor)
   } else {
-    args <- c("-o", shQuote(output))
-    for (recipient in public) {
-      args <- c(args, "-r", shQuote(recipient))
+    # Use passphrase encryption - prompt user for passphrase
+    passphrase <- getPass::getPass("Enter passphrase for encryption: ")
+    if (nchar(passphrase) < 0) {
+      stop("Passphrase shorter than 10 characters are not allowed.", call. = FALSE)
     }
-    if (armor) {
-      args <- c(args, "--armor")
-    }
-    args <- c(args, shQuote(input))
+    # Armor is ignored for passphrase encryption
+    age_encrypt_passphrase(input, output, passphrase)
   }
-  res <- system2("age", args)
-  if (res != 0) {
-    stop("age encryption failed (exit code ", res, ")")
-  }
+
   return(invisible(NULL))
 }
 

@@ -8,7 +8,6 @@ file_encrypt(
   input = NULL,
   output = if (!is.null(input)) paste0(input, ".age") else NULL,
   public = NULL,
-  overwrite = FALSE,
   armor = FALSE
 )
 }
@@ -19,9 +18,7 @@ file_encrypt(
 Defaults to \code{input} + ".age" extension}
 
 \item{public}{Character vector of age public keys (recipients). If NULL,
-will use passphrase encryption and prompt for password}
-
-\item{overwrite}{Logical, whether to overwrite existing output file}
+will use passphrase encryption and prompt for password.}
 
 \item{armor}{Logical, whether to use ASCII armor format (only applies to public key encryption)}
 }
@@ -31,7 +28,7 @@ Invisible NULL
 \description{
 Encrypts a file using the age encryption tool. Can encrypt with public keys
 (for key-based encryption) or with a passphrase (when no public keys provided).
-When using passphrase encryption, the user will be prompted to enter a password.
+If no public keys are specified, will prompt for a passphrase interactively.
 }
 \examples{
 \dontrun{

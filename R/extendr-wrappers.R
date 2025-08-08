@@ -42,5 +42,20 @@ age_generate_key <- function(key_file_path) .Call(wrap__age_generate_key, key_fi
 #' @noRd
 age_extract_public_key <- function(key_file_path) .Call(wrap__age_extract_public_key, key_file_path)
 
+#' Encrypt a file using age with public keys
+#' 
+#' This function encrypts a file using one or more age public keys (recipients).
+#' Supports both ASCII-armored and binary output formats.
+#' @keywords internal
+#' @noRd
+age_encrypt_key <- function(input_file_path, output_file_path, recipients, armor) .Call(wrap__age_encrypt_key, input_file_path, output_file_path, recipients, armor)
+
+#' Encrypt a file using age with a passphrase
+#' 
+#' This function encrypts a file using a passphrase-based encryption.
+#' @keywords internal
+#' @noRd
+age_encrypt_passphrase <- function(input_file_path, output_file_path, passphrase) .Call(wrap__age_encrypt_passphrase, input_file_path, output_file_path, passphrase)
+
 
 # nolint end

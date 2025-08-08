@@ -173,6 +173,106 @@ fn age_extract_public_key(key_file_path: &str) -> Result<String> {
     Err(Error::Other("No valid age identities found".to_string()))
 }
 
+/// Encrypt a file using age with public keys
+/// 
+/// This function encrypts a file using one or more age public keys (recipients).
+/// Supports both ASCII-armored and binary output formats.
+/// @keywords internal
+/// @noRd
+#[extendr]
+fn age_encrypt_key(input_file_path: &str, output_file_path: &str, recipients: Vec<String>, armor: bool) -> Result<()> {
+    use age::armor::ArmoredWriter;
+    use std::io::{BufWriter, Write};
+    
+    // Parse recipients
+    let mut parsed_recipients = Vec::new();
+    for recipient_str in recipients {
+        let recipient = recipient_str.parse::<age::x25519::Recipient>()
+            .map_err(|e| Error::Other(format!("Invalid recipient '{}': {}", recipient_str, e)))?;
+        parsed_recipients.push(Box::new(recipient) as Box<dyn age::Recipient>);
+    }
+    
+    if parsed_recipients.is_empty() {
+        return Err(Error::Other("At least one recipient is required".to_string()));
+    }
+    
+    // Read input file
+    let input_data = std::fs::read(input_file_path)
+        .map_err(|e| Error::Other(format!("Failed to read input file: {}", e)))?;
+    
+    // Create encryptor
+    let encryptor = age::Encryptor::with_recipients(parsed_recipients.iter().map(|r| r.as_ref()))
+        .map_err(|e| Error::Other(format!("Failed to create encryptor: {}", e)))?;
+    
+    // Create output file
+    let output_file = std::fs::File::create(output_file_path)
+        .map_err(|e| Error::Other(format!("Failed to create output file: {}", e)))?;
+    
+    // Wrap output writer based on armor setting
+    let mut writer: Box<dyn Write> = if armor {
+        use age::armor::Format;
+        Box::new(ArmoredWriter::wrap_output(BufWriter::new(output_file), Format::AsciiArmor)
+            .map_err(|e| Error::Other(format!("Failed to create armored writer: {}", e)))?)
+    } else {
+        Box::new(BufWriter::new(output_file))
+    };
+    
+    // Encrypt and write
+    let mut encrypted_writer = encryptor.wrap_output(&mut writer)
+        .map_err(|e| Error::Other(format!("Failed to wrap output for encryption: {}", e)))?;
+    
+    encrypted_writer.write_all(&input_data)
+        .map_err(|e| Error::Other(format!("Failed to write encrypted data: {}", e)))?;
+    
+    encrypted_writer.finish()
+        .map_err(|e| Error::Other(format!("Failed to finalize encryption: {}", e)))?;
+    
+    writer.flush()
+        .map_err(|e| Error::Other(format!("Failed to flush output: {}", e)))?;
+    
+    Ok(())
+}
+
+/// Encrypt a file using age with a passphrase
+/// 
+/// This function encrypts a file using a passphrase-based encryption.
+/// @keywords internal
+/// @noRd
+#[extendr]
+fn age_encrypt_passphrase(input_file_path: &str, output_file_path: &str, passphrase: &str) -> Result<()> {
+    use age::secrecy::SecretString;
+    use std::io::{BufWriter, Write};
+    
+    // Create scrypt encryptor from passphrase
+    let secret_pass = SecretString::from(passphrase.to_owned());
+    let encryptor = age::Encryptor::with_user_passphrase(secret_pass);
+    
+    // Read input file
+    let input_data = std::fs::read(input_file_path)
+        .map_err(|e| Error::Other(format!("Failed to read input file: {}", e)))?;
+    
+    // Create output file
+    let output_file = std::fs::File::create(output_file_path)
+        .map_err(|e| Error::Other(format!("Failed to create output file: {}", e)))?;
+    
+    let mut writer = BufWriter::new(output_file);
+    
+    // Encrypt and write
+    let mut encrypted_writer = encryptor.wrap_output(&mut writer)
+        .map_err(|e| Error::Other(format!("Failed to wrap output for encryption: {}", e)))?;
+    
+    encrypted_writer.write_all(&input_data)
+        .map_err(|e| Error::Other(format!("Failed to write encrypted data: {}", e)))?;
+    
+    encrypted_writer.finish()
+        .map_err(|e| Error::Other(format!("Failed to finalize encryption: {}", e)))?;
+    
+    writer.flush()
+        .map_err(|e| Error::Other(format!("Failed to flush output: {}", e)))?;
+    
+    Ok(())
+}
+
 // Register the Rust functions with R's extendr system
 // This macro generates the necessary C bindings for R to call our Rust functions
 extendr_module! {
@@ -181,4 +281,6 @@ extendr_module! {
     fn age_decrypt_key;
     fn age_generate_key;
     fn age_extract_public_key;
+    fn age_encrypt_key;
+    fn age_encrypt_passphrase;
 }
