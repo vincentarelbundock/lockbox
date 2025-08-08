@@ -2,40 +2,17 @@
 % Please edit documentation in R/age.R
 \name{key_generate.R}
 \alias{key_generate.R}
-\title{Generate a new age identity (key pair)}
+\title{Generate a new age identity (key pair) - DEPRECATED}
 \usage{
 key_generate.R(keyfile = NULL)
 }
 \arguments{
-\item{keyfile}{Character string, path where the private key will be saved.
-The file will contain both public and private key information.}
+\item{keyfile}{Character string, path where the private key will be saved.}
 }
 \value{
-A \code{lockbox_key} object containing:
-\itemize{
-\item \verb{$public}: The public key (age recipient identifier)
-\item \verb{$private}: The private key (only for newly created keys)
-\item \verb{$created}: Timestamp of key creation (only for newly created keys)
-}
-
-If the key file already exists, returns a \code{lockbox_key} object with only
-the \verb{$public} component and displays a message about not overwriting.
+A \code{lockbox_key} object
 }
 \description{
-Create a new age encryption key pair and save it to a file. The key pair consists
-of a public key (for encryption) and a private key (for decryption). If the specified
-key file already exists, the function will return the existing public key without
-overwriting the file.
+Generate a new age identity (key pair) - DEPRECATED
 }
-\examples{
-\dontrun{
-# Generate and save new key to file
-key <- key_generate.R("my_identity.key")
-print(key$public)
-
-# If file already exists, returns existing public key without overwriting
-existing_key <- key_generate.R("my_identity.key")
-print(existing_key$public) # Shows existing public key
-}
-
-}
+\keyword{internal}

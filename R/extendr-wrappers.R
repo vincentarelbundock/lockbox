@@ -26,5 +26,21 @@ age_decrypt_passphrase <- function(encrypted_file_path, passphrase) .Call(wrap__
 #' @noRd
 age_decrypt_key <- function(encrypted_file_path, private_key_path) .Call(wrap__age_decrypt_key, encrypted_file_path, private_key_path)
 
+#' Generate a new age key pair and save to file
+#' 
+#' This function generates a new x25519 key pair, writes it to the specified file path,
+#' and returns the public key string. Assumes the file path is valid and writable.
+#' @keywords internal
+#' @noRd
+age_generate_key <- function(key_file_path) .Call(wrap__age_generate_key, key_file_path)
+
+#' Extract public key from an existing age key file
+#' 
+#' This function reads an age identity file and extracts the public key
+#' (recipient identifier) from the first valid identity found.
+#' @keywords internal
+#' @noRd
+age_extract_public_key <- function(key_file_path) .Call(wrap__age_extract_public_key, key_file_path)
+
 
 # nolint end

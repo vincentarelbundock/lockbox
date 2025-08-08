@@ -2,6 +2,7 @@
 use extendr_api::prelude::*;
 use std::io::Read;
 use std::str::FromStr;
+use age::secrecy::ExposeSecret;
 
 /// Decrypt file content using identities and return as string
 /// 
@@ -110,10 +111,74 @@ fn age_decrypt_key(encrypted_file_path: &str, private_key_path: &str) -> Result<
     decrypt_content(&file_content, identities.iter().map(|i| i.as_ref()))
 }
 
+/// Generate a new age key pair and save to file
+/// 
+/// This function generates a new x25519 key pair, writes it to the specified file path,
+/// and returns the public key string. Assumes the file path is valid and writable.
+/// @keywords internal
+/// @noRd
+#[extendr]
+fn age_generate_key(key_file_path: &str) -> Result<String> {
+    use std::io::Write;
+    
+    // Generate a new x25519 identity (private key)
+    let identity = age::x25519::Identity::generate();
+    
+    // Get the corresponding recipient (public key)
+    let recipient = identity.to_public();
+    
+    // Format the private key for writing to file
+    let private_key_line = format!("# created: {}\n# public key: {}\n{}\n",
+        chrono::Utc::now().format("%Y-%m-%d %H:%M:%S UTC"),
+        recipient,
+        identity.to_string().expose_secret()
+    );
+    
+    // Write the private key to the specified file
+    let mut file = std::fs::File::create(key_file_path)
+        .map_err(|e| Error::Other(format!("Failed to create key file: {}", e)))?;
+    
+    file.write_all(private_key_line.as_bytes())
+        .map_err(|e| Error::Other(format!("Failed to write key file: {}", e)))?;
+    
+    // Return the public key as a string
+    Ok(recipient.to_string())
+}
+
+/// Extract public key from an existing age key file
+/// 
+/// This function reads an age identity file and extracts the public key
+/// (recipient identifier) from the first valid identity found.
+/// @keywords internal
+/// @noRd
+#[extendr]
+fn age_extract_public_key(key_file_path: &str) -> Result<String> {
+    // Read the key file content
+    let key_content = std::fs::read_to_string(key_file_path)
+        .map_err(|e| Error::Other(format!("Failed to read key file: {}", e)))?;
+
+    // Use the existing parse function to validate the file and get identities
+    let _identities = parse_identities_from_key_file(&key_content)?;
+    
+    // Extract public key from the first valid identity line
+    for line in key_content.lines() {
+        if line.starts_with("AGE-SECRET-KEY-") {
+            let identity = age::x25519::Identity::from_str(line)
+                .map_err(|e| Error::Other(format!("Failed to parse identity: {}", e)))?;
+            let recipient = identity.to_public();
+            return Ok(recipient.to_string());
+        }
+    }
+    
+    Err(Error::Other("No valid age identities found".to_string()))
+}
+
 // Register the Rust functions with R's extendr system
 // This macro generates the necessary C bindings for R to call our Rust functions
 extendr_module! {
     mod lockbox;
     fn age_decrypt_passphrase;
     fn age_decrypt_key;
+    fn age_generate_key;
+    fn age_extract_public_key;
 }

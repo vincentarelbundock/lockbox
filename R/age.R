@@ -188,55 +188,78 @@ file_decrypt <- function(
 #'
 #' Create a new age encryption key pair and save it to a file. The key pair consists
 #' of a public key (for encryption) and a private key (for decryption). If the specified
-#' key file already exists, the function will return the existing public key without
-#' overwriting the file.
+#' key file already exists, the function will error to prevent overwriting.
 #'
 #' @param keyfile Character string, path where the private key will be saved.
 #'   The file will contain both public and private key information.
 #'
 #' @return A `lockbox_key` object containing:
 #'   - `$public`: The public key (age recipient identifier)
-#'   - `$private`: The private key (only for newly created keys)
-#'   - `$created`: Timestamp of key creation (only for newly created keys)
-#'
-#'   If the key file already exists, returns a `lockbox_key` object with only
-#'   the `$public` component and displays a message about not overwriting.
+#'   - `$created`: Timestamp of key creation
 #'
 #' @examples
 #' \dontrun{
 #' # Generate and save new key to file
-#' key <- key_generate.R("my_identity.key")
+#' key <- key_generate("my_identity.key")
 #' print(key$public)
-#'
-#' # If file already exists, returns existing public key without overwriting
-#' existing_key <- key_generate.R("my_identity.key")
-#' print(existing_key$public) # Shows existing public key
 #' }
 #'
 #' @export
-key_generate.R <- function(keyfile = NULL) {
-  assert_age()
-  checkmate::assert_path_for_output(keyfile, overwrite = TRUE)
+key_generate <- function(keyfile = NULL) {
+  checkmate::assert_path_for_output(keyfile, overwrite = FALSE)
   keyfile <- normalizePath(keyfile, mustWork = FALSE)
   if (isTRUE(checkmate::check_file_exists(keyfile))) {
-    res <- system2(
-      "age-keygen",
-      args = c("-y", shQuote(keyfile)),
-      stdout = TRUE,
-      stderr = TRUE
-    )
-    out <- list("public" = res)
-    class(out) <- "lockbox_key"
+    stop("Key file already exists. Use key_recipient() to read existing key or choose a different path.", call. = FALSE)
+  }
+  # Use Rust implementation to generate key
+  public_key <- age_generate_key(keyfile)
+  attr(public_key, "created") <- Sys.time()
+  class(public_key) <- "lockbox_key"
+  return(public_key)
+}
+
+#' Extract public key (recipient) from existing age key file
+#'
+#' Read an existing age key file and extract the public key component that can
+#' be used as a recipient identifier for encryption.
+#'
+#' @param keyfile Character string, path to an existing age key file.
+#'
+#' @return A `lockbox_key` object containing:
+#'   - `$public`: The public key (age recipient identifier)
+#'
+#' @examples
+#' \dontrun{
+#' # Extract public key from existing key file
+#' recipient <- key_recipient("my_identity.key")
+#' print(recipient$public)
+#' }
+#'
+#' @export
+key_recipient <- function(keyfile = NULL) {
+  checkmate::assert_file_exists(keyfile)
+  keyfile <- normalizePath(keyfile, mustWork = TRUE)
+  # Use Rust implementation to extract public key
+  public_key <- age_extract_public_key(keyfile)
+  class(public_key) <- "lockbox_key"
+  return(public_key)
+}
+
+#' Generate a new age identity (key pair) - DEPRECATED
+#'
+#' @param keyfile Character string, path where the private key will be saved.
+#' @return A `lockbox_key` object
+#' @export
+#' @keywords internal
+key_generate.R <- function(keyfile = NULL) {
+  .Deprecated("key_generate", package = "lockbox")
+  checkmate::assert_path_for_output(keyfile, overwrite = FALSE)
+  keyfile <- normalizePath(keyfile, mustWork = FALSE)
+  if (isTRUE(checkmate::check_file_exists(keyfile))) {
     message("Key file already exists; not overwriting.")
-    return(out)
+    return(key_recipient(keyfile))
   } else {
-    args <- c("-o", shQuote(keyfile))
-    key <- system2("age-keygen", args = args, stdout = TRUE, stderr = TRUE)
-    key <- list(public = key[1], private = key[4])
-    key[["created"]] <- Sys.time()
-    key[["public"]] <- sub("Public key: ", "", key[["public"]])
-    class(key) <- "lockbox_key"
-    return(key)
+    return(key_generate(keyfile))
   }
 }
 
@@ -246,11 +269,9 @@ key_generate.R <- function(keyfile = NULL) {
 #' @param x A `lockbox_key` object.
 #' @export
 print.lockbox_key <- function(x, ...) {
-  if ("created" %in% names(x)) {
-    x[["created"]] <- format(x[["created"]], "%Y-%m-%d %H:%M:%S")
-    cat("Key created: ", as.character(x[["created"]]), "\n")
+  if (!is.null(attr(x, "created"))) {
+    cat("Age key created at", format(attr(x, "created")), "\n")
   }
-  x[["public"]] <- sub("Public key: ", "", x[["public"]])
-  cat("Public key: ", paste(x[["public"]], collapse = "\n"), "\n")
-  cat("Private key: AGE-SECRET-KEY-*********", "\n")
+  cat("Public key: ", x, "\n", sep = "")
+  invisible(x)
 }
