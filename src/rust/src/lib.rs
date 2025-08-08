@@ -79,7 +79,7 @@ fn age_decrypt_passphrase(encrypted_file_path: &str, passphrase: &str) -> Result
 
     // Read the entire encrypted file into memory
     let file_content = std::fs::read(encrypted_file_path)
-        .map_err(|e| Error::Other(format!("Failed to read file: {}", e)))?;
+        .map_err(|_| Error::Other("Failed to read encrypted file".to_string()))?;
 
     // Create scrypt identity from passphrase for secure decryption
     let secret_pass = SecretString::from(passphrase.to_owned());
@@ -100,10 +100,10 @@ fn age_decrypt_passphrase(encrypted_file_path: &str, passphrase: &str) -> Result
 fn age_decrypt_key(encrypted_file_path: &str, private_key_path: &str) -> Result<Raw> {
     // Read the encrypted file and private key file
     let file_content = std::fs::read(encrypted_file_path)
-        .map_err(|e| Error::Other(format!("Failed to read file: {}", e)))?;
+        .map_err(|_| Error::Other("Failed to read encrypted file".to_string()))?;
 
     let key_content = std::fs::read_to_string(private_key_path)
-        .map_err(|e| Error::Other(format!("Failed to read key file: {}", e)))?;
+        .map_err(|_| Error::Other("Failed to read private key file".to_string()))?;
 
     // Parse all age identities from the key file
     let identities = parse_identities_from_key_file(&key_content)?;
@@ -138,10 +138,10 @@ fn age_generate_key(key_file_path: &str) -> Result<String> {
     
     // Write the private key to the specified file
     let mut file = std::fs::File::create(key_file_path)
-        .map_err(|e| Error::Other(format!("Failed to create key file: {}", e)))?;
+        .map_err(|_| Error::Other("Failed to create key file".to_string()))?;
     
     file.write_all(private_key_line.as_bytes())
-        .map_err(|e| Error::Other(format!("Failed to write key file: {}", e)))?;
+        .map_err(|_| Error::Other("Failed to write key file".to_string()))?;
     
     // Return the public key as a string
     Ok(recipient.to_string())
@@ -157,7 +157,7 @@ fn age_generate_key(key_file_path: &str) -> Result<String> {
 fn age_extract_public_key(key_file_path: &str) -> Result<String> {
     // Read the key file content
     let key_content = std::fs::read_to_string(key_file_path)
-        .map_err(|e| Error::Other(format!("Failed to read key file: {}", e)))?;
+        .map_err(|_| Error::Other("Failed to read key file".to_string()))?;
 
     // Use the existing parse function to validate the file and get identities
     let _identities = parse_identities_from_key_file(&key_content)?;
@@ -200,7 +200,7 @@ fn age_encrypt_key(input_file_path: &str, output_file_path: &str, recipients: Ve
     
     // Read input file
     let input_data = std::fs::read(input_file_path)
-        .map_err(|e| Error::Other(format!("Failed to read input file: {}", e)))?;
+        .map_err(|_| Error::Other("Failed to read input file".to_string()))?;
     
     // Create encryptor
     let encryptor = age::Encryptor::with_recipients(parsed_recipients.iter().map(|r| r.as_ref()))
@@ -208,7 +208,7 @@ fn age_encrypt_key(input_file_path: &str, output_file_path: &str, recipients: Ve
     
     // Create output file
     let output_file = std::fs::File::create(output_file_path)
-        .map_err(|e| Error::Other(format!("Failed to create output file: {}", e)))?;
+        .map_err(|_| Error::Other("Failed to create output file".to_string()))?;
     
     // Wrap output writer based on armor setting
     let mut writer: Box<dyn Write> = if armor {
@@ -251,11 +251,11 @@ fn age_encrypt_passphrase(input_file_path: &str, output_file_path: &str, passphr
     
     // Read input file
     let input_data = std::fs::read(input_file_path)
-        .map_err(|e| Error::Other(format!("Failed to read input file: {}", e)))?;
+        .map_err(|_| Error::Other("Failed to read input file".to_string()))?;
     
     // Create output file
     let output_file = std::fs::File::create(output_file_path)
-        .map_err(|e| Error::Other(format!("Failed to create output file: {}", e)))?;
+        .map_err(|_| Error::Other("Failed to create output file".to_string()))?;
     
     let mut writer = BufWriter::new(output_file);
     

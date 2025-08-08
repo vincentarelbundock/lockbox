@@ -11,22 +11,40 @@ key_generate(keyfile = NULL)
 The file will contain both public and private key information.}
 }
 \value{
-A \code{lockbox_key} object containing:
-\itemize{
-\item \verb{$public}: The public key (age recipient identifier)
-\item \verb{$created}: Timestamp of key creation
-}
+A \code{lockbox_key} object which is a character string containing the
+public key (age recipient identifier) with a \code{created} attribute containing
+the timestamp of key creation.
 }
 \description{
 Create a new age encryption key pair and save it to a file. The key pair consists
 of a public key (for encryption) and a private key (for decryption). If the specified
 key file already exists, the function will error to prevent overwriting.
 }
+\section{Security Warning}{
+
+The private key file is created using the system's default file permissions,
+which may be readable by other users (typically 0644 on Unix systems). After
+generating a key, you should immediately set restrictive permissions:
+
+\code{
+# On Unix/Linux/macOS:
+key <- key_generate("my_identity.key")
+Sys.chmod("my_identity.key", "0600")  # Owner read/write only
+}
+
+On Windows, store keys in a secure location like \verb{\%USERPROFILE\%\\\\.config\\\\lockbox\\\\}
+and rely on NTFS ACLs for protection.
+}
+
 \examples{
 \dontrun{
 # Generate and save new key to file
 key <- key_generate("my_identity.key")
-print(key$public)
+print(key)  # prints the public key
+print(attr(key, "created"))  # prints creation time
+
+# IMPORTANT: Secure the key file permissions
+Sys.chmod("my_identity.key", "0600")
 }
 
 }

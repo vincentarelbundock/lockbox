@@ -52,26 +52,30 @@ You must _never_ edit your `lockbox.yaml` file manually. Always use the provided
 
 ## Installation
 
-To use the `lockbox` package, you must first install the `age` and `sops` command line tools. Both tools are free and available for Windows, macOS, and Linux.
+The `lockbox` package uses the [age](https://age-encryption.org) encryption format through a Rust implementation, so you need to install Rust to compile the package. The easiest way to install Rust is through [rustup](https://rustup.rs/):
 
-* [https://age-encryption.org](https://age-encryption.org)
+```sh
+# Install Rust (all platforms)
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+# Follow the installation prompts, then restart your terminal
+```
+
+For secrets management, you also need to install the `sops` command line tool:
+
 * [SOPS website](https://getsops.io/)
-
-For detailed installation instructions, click on the links above. Most users will find it easy to install `age` and `SOPS` using a package manager like [Homebrew (MacOS)](https://brew.sh/) or [Chocolatey (Windows).](https://chocolatey.org/)
 
 ```sh
 # macOS
-brew install age sops
+brew install sops
 
 # Windows
-choco install age.portable
 choco install sops
 
 # Linux
-# Use your distributions package manager
+# Use your distribution's package manager
 ```
 
-You can install the development version of `lockbox` from Github:
+Once Rust and SOPS are installed, you can install the development version of `lockbox` from Github:
 
 ```r
 library(remotes)
@@ -85,11 +89,11 @@ Our first step is to create a private/public key pair using the `key_generate()`
 
 ```{r}
 library(lockbox)
-key <- key_generate.R("private.key")
+key <- key_generate("private.key")
 key
 ```
 
-This command created a local "identity file," which holds both the public and private keys.
+This command created a local "identity file," which holds both the public and private keys. The function returns the public key directly as a string.
 
 ```{r}
 file.exists("private.key")
@@ -97,6 +101,13 @@ file.exists("private.key")
 
 ::::{.callout-warning}
 **Do not share the `private.key` file**. It should be kept secret and secure.
+
+**Security Note**: The private key file is created with default system permissions, which may be readable by other users. After generating a key, set secure permissions:
+
+```r
+# On Unix/Linux/macOS:
+Sys.chmod("private.key", "0600")  # Owner read/write only
+```
 ::::
 
 ## Use-case 1: Encrypting files
@@ -117,7 +128,7 @@ Now, let's use the public key and the `file_encrypt()` function to encrypt the f
 #| warning: false
 file_encrypt(
   input = "sensitive.txt",
-  public = key$public
+  public = key
 )
 
 readLines("sensitive.txt.age")
@@ -153,7 +164,7 @@ secrets <- list(
 secrets_encrypt(
   lockbox = "lockbox.yaml",
   secrets = secrets,
-  public = key$public
+  public = key
 )
 ```
 
@@ -221,7 +232,7 @@ file_encrypt(
 # You will be prompted to enter a secure passphrase
 ```
 
-When you run this command, you'll be prompted to enter a passphrase. Ideally, you should leave the field blank to use the randomly-generated passphrase supplied by `age`. Otherwise, make sure you choose a strong passphrase.
+When you run this command, you'll be prompted to enter a passphrase. Make sure you choose a strong, memorable passphrase as you'll need it every time you use the encrypted key file.
 
 #### Step 2: Remove the unencrypted key file.
 
