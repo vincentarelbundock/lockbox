@@ -11,3 +11,4 @@ name = 'lockbox'
 
 [dependencies]
 extendr-api = '*'
+age = { version = "0.11.1", features = ["armor"] }

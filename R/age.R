@@ -150,15 +150,23 @@ file_decrypt <- function(
     private <- normalizePath(private, mustWork = TRUE)
   }
 
-  # Use our Rust function to decrypt to memory
+  # Use appropriate Rust function based on authentication method
   tryCatch(
     {
-      # Decrypt content using our Rust function
-      decrypted_content <- age_decrypt(
-        encrypted_file_path = input,
-        private_key_path = private,
-        passphrase = passphrase
-      )
+      # Decrypt content using appropriate Rust function
+      if (!is.null(private)) {
+        # Use key-based decryption
+        decrypted_content <- age_decrypt_key(
+          encrypted_file_path = input,
+          private_key_path = private
+        )
+      } else {
+        # Use passphrase-based decryption
+        decrypted_content <- age_decrypt_passphrase(
+          encrypted_file_path = input,
+          passphrase = passphrase
+        )
+      }
 
       # If output is NULL, return content as string
       if (is.null(output)) {

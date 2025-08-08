@@ -10,19 +10,11 @@
 #' @useDynLib lockbox, .registration = TRUE
 NULL
 
-#' Decrypt an age-encrypted file and return the content as a string
-#' 
-#' This function reads an age-encrypted file, decrypts it using the provided
-#' private key or passphrase, and returns the decrypted content as a string 
-#' without writing it to disk.
-#' 
-#' @param encrypted_file_path Path to the age-encrypted file
-#' @param private_key_path Path to the age private key file (optional if using passphrase)
-#' @param passphrase Passphrase for decryption (optional if using private key)
-#' @return Decrypted content as string
-#' @keywords internal
-#' @noRd
-age_decrypt <- function(encrypted_file_path, private_key_path, passphrase) .Call(wrap__age_decrypt, encrypted_file_path, private_key_path, passphrase)
+#' Decrypt an age-encrypted file using a passphrase
+age_decrypt_passphrase <- function(encrypted_file_path, passphrase) .Call(wrap__age_decrypt_passphrase, encrypted_file_path, passphrase)
+
+#' Decrypt an age-encrypted file using a private key
+age_decrypt_key <- function(encrypted_file_path, private_key_path) .Call(wrap__age_decrypt_key, encrypted_file_path, private_key_path)
 
 
 # nolint end
