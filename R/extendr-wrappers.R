@@ -11,9 +11,19 @@
 NULL
 
 #' Decrypt an age-encrypted file using a passphrase
+#' 
+#' This function handles both ASCII-armored and binary age files encrypted with passphrases.
+#' It reads the entire file into memory, detects the format, and returns the decrypted content as a string.
+#' @keywords internal
+#' @noRd
 age_decrypt_passphrase <- function(encrypted_file_path, passphrase) .Call(wrap__age_decrypt_passphrase, encrypted_file_path, passphrase)
 
 #' Decrypt an age-encrypted file using a private key
+#' 
+#' This function handles both ASCII-armored and binary age files encrypted with public keys.
+#' It reads the private key file, parses all identities, and returns the decrypted content as a string.
+#' @keywords internal
+#' @noRd
 age_decrypt_key <- function(encrypted_file_path, private_key_path) .Call(wrap__age_decrypt_key, encrypted_file_path, private_key_path)
 
 
