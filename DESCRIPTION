@@ -13,10 +13,11 @@ Authors@R: c(
 License: MIT + file LICENSE
 Encoding: UTF-8
 Depends:
-    R (>= 4.1.0)
+    R (>= 4.2)
 Imports:
     checkmate,
     yaml
-SystemRequirements: age, sops
+SystemRequirements: age, sops, Cargo (Rust's package manager), rustc
 RoxygenNote: 7.3.2
 Roxygen: list(markdown = TRUE)
+Config/rextendr/version: 0.4.1.9000

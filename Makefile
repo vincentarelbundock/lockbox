@@ -16,7 +16,7 @@ check:  document ## check
 	Rscript -e "devtools::check()"
 
 install: document  ## install
-	Rscript -e "devtools::install(dependencies = FALSE)"
+	Rscript -e "rextendr::document();devtools::install(dependencies = FALSE)"
 
 installdep: document  ## install with Suggests
 	Rscript -e "devtools::install(dependencies = TRUE)"

@@ -61,3 +61,18 @@ sandbox/*.tex
 
 CLAUDE.md
 tmp.pdf
+src/rust/vendor
+src/Makevars
+src/Makevars.win
+Makevars.win.in
+Makevars.in
+
+*.o
+*.so
+*.dll
+target
+.cargo
+
+src/rust/target
+src/.cargo
+

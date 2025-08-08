@@ -52,15 +52,14 @@ assert_age <- function() {
 #'
 #' # Encrypt with custom output path and armor
 #' file_encrypt("secret.txt", "encrypted.age",
-#'     public = "age1xyz...", armor = TRUE)
+#'   public = "age1xyz...", armor = TRUE)
 #' }
 file_encrypt <- function(
-  input = NULL,
-  output = if (!is.null(input)) paste0(input, ".age") else NULL,
-  public = NULL,
-  overwrite = FALSE,
-  armor = FALSE
-) {
+    input = NULL,
+    output = if (!is.null(input)) paste0(input, ".age") else NULL,
+    public = NULL,
+    overwrite = FALSE,
+    armor = FALSE) {
   assert_age()
   checkmate::assert_flag(overwrite)
   checkmate::assert_file_exists(input)
@@ -93,74 +92,87 @@ file_encrypt <- function(
 #' Decrypt an age-encrypted file
 #'
 #' Decrypts a file that was encrypted with age. Can decrypt using a private key file
-#' (for key-based decryption) or by prompting for a passphrase (when no private key provided).
-#' When using passphrase decryption, the user will be prompted to enter the password.
+#' (for key-based decryption) or with a passphrase (for passphrase-based decryption).
+#' You must provide either a private key or a passphrase, but not both.
 #'
 #' @param input Character string, path to the age-encrypted file to decrypt
-#' @param output Character string, path for the decrypted output file
-#' @param private Character string, path to the private age key file. If NULL,
-#'   will use passphrase decryption and prompt for password
-#' @param overwrite Logical, whether to overwrite existing output file
+#' @param output Character string, path for the decrypted output file. If NULL, returns content as string.
+#' @param private Character string, path to the private age key file. Cannot be used with passphrase.
+#' @param passphrase Character string, passphrase for decryption. Cannot be used with private key.
+#' @param overwrite Logical, whether to overwrite existing output file (ignored when output is NULL)
 #'
-#' @return Invisible path to the output file
+#' @return If output is provided, returns invisible path to the output file. If output is NULL, returns decrypted content as string.
 #' @export
 #'
 #' @examples
 #' \dontrun{
-#' # Decrypt with private key
+#' # Decrypt to file with private key
 #' file_decrypt("secret.txt.age", "secret.txt", private = "identity.key")
 #'
-#' # Decrypt with passphrase (will prompt)
-#' file_decrypt("secret.txt.age", "secret.txt")
+#' # Decrypt to file with passphrase
+#' file_decrypt("secret.txt.age", "secret.txt", passphrase = "mypassword")
+#'
+#' # Decrypt to string (no file output)
+#' content <- file_decrypt("secret.txt.age", output = NULL, private = "identity.key")
+#' content <- file_decrypt("secret.txt.age", output = NULL, passphrase = "mypassword")
 #' }
 file_decrypt <- function(
-  input = NULL,
-  output = NULL,
-  private = NULL,
-  overwrite = FALSE
-) {
-  assert_age()
+    input = NULL,
+    output = NULL,
+    private = NULL,
+    passphrase = NULL,
+    overwrite = FALSE) {
+  # Input validation
   checkmate::assert_file_exists(input)
-  checkmate::assert_flag(overwrite)
-  checkmate::assert_path_for_output(output, overwrite = overwrite)
+  checkmate::assert_character(private, len = 1, null.ok = TRUE)
+  checkmate::assert_character(passphrase, len = 1, null.ok = TRUE)
+
+  # Validate output parameter
+  if (!is.null(output)) {
+    checkmate::assert_flag(overwrite)
+    checkmate::assert_path_for_output(output, overwrite = overwrite)
+  }
+
+  # Validate that exactly one authentication method is provided
+  if (is.null(private) && is.null(passphrase)) {
+    stop("Either 'private' or 'passphrase' must be provided", call. = FALSE)
+  }
+
+  if (!is.null(private) && !is.null(passphrase)) {
+    stop("Cannot specify both 'private' and 'passphrase'", call. = FALSE)
+  }
+
+  # Normalize paths
   input <- normalizePath(input, mustWork = TRUE)
-  output <- normalizePath(output, mustWork = FALSE)
 
   if (!is.null(private)) {
-    # no null.ok in this function
     checkmate::assert_file_exists(private)
     private <- normalizePath(private, mustWork = TRUE)
   }
 
-  if (!is.null(private)) {
-    # Use identity file
-    args <- c(
-      "-d",
-      "-i",
-      shQuote(private),
-      "-o",
-      shQuote(output),
-      shQuote(input)
-    )
-    stdin_input <- NULL
-  } else {
-    # Use passphrase
-    args <- c("--decrypt", "-o", shQuote(output), shQuote(input))
-    stdin_input <- NULL
-  }
+  # Use our Rust function to decrypt to memory
+  tryCatch(
+    {
+      # Decrypt content using our Rust function
+      decrypted_content <- age_decrypt(
+        encrypted_file_path = input,
+        private_key_path = private,
+        passphrase = passphrase
+      )
 
-  res <- system2(
-    "age",
-    args = args,
-    input = stdin_input,
-    stdout = FALSE,
-    stderr = FALSE
-  )
+      # If output is NULL, return content as string
+      if (is.null(output)) {
+        return(decrypted_content)
+      }
 
-  if (res != 0) {
-    stop("age decryption failed (exit code ", res, ")")
-  }
-  invisible(output)
+      # Otherwise, write to file and return path
+      output <- normalizePath(output, mustWork = FALSE)
+      writeLines(decrypted_content, output, sep = "")
+      invisible(output)
+    },
+    error = function(e) {
+      stop("age decryption failed: ", e$message, call. = FALSE)
+    })
 }
 
 

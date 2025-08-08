@@ -4,32 +4,43 @@
 \alias{file_decrypt}
 \title{Decrypt an age-encrypted file}
 \usage{
-file_decrypt(input = NULL, output = NULL, private = NULL, overwrite = FALSE)
+file_decrypt(
+  input = NULL,
+  output = NULL,
+  private = NULL,
+  passphrase = NULL,
+  overwrite = FALSE
+)
 }
 \arguments{
 \item{input}{Character string, path to the age-encrypted file to decrypt}
 
-\item{output}{Character string, path for the decrypted output file}
+\item{output}{Character string, path for the decrypted output file. If NULL, returns content as string.}
 
-\item{private}{Character string, path to the private age key file. If NULL,
-will use passphrase decryption and prompt for password}
+\item{private}{Character string, path to the private age key file. Cannot be used with passphrase.}
 
-\item{overwrite}{Logical, whether to overwrite existing output file}
+\item{passphrase}{Character string, passphrase for decryption. Cannot be used with private key.}
+
+\item{overwrite}{Logical, whether to overwrite existing output file (ignored when output is NULL)}
 }
 \value{
-Invisible path to the output file
+If output is provided, returns invisible path to the output file. If output is NULL, returns decrypted content as string.
 }
 \description{
 Decrypts a file that was encrypted with age. Can decrypt using a private key file
-(for key-based decryption) or by prompting for a passphrase (when no private key provided).
-When using passphrase decryption, the user will be prompted to enter the password.
+(for key-based decryption) or with a passphrase (for passphrase-based decryption).
+You must provide either a private key or a passphrase, but not both.
 }
 \examples{
 \dontrun{
-# Decrypt with private key
+# Decrypt to file with private key
 file_decrypt("secret.txt.age", "secret.txt", private = "identity.key")
 
-# Decrypt with passphrase (will prompt)
-file_decrypt("secret.txt.age", "secret.txt")
+# Decrypt to file with passphrase
+file_decrypt("secret.txt.age", "secret.txt", passphrase = "mypassword")
+
+# Decrypt to string (no file output)
+content <- file_decrypt("secret.txt.age", output = NULL, private = "identity.key")
+content <- file_decrypt("secret.txt.age", output = NULL, passphrase = "mypassword")
 }
 }

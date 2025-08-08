@@ -43,6 +43,6 @@ file_encrypt("secret.txt")
 
 # Encrypt with custom output path and armor
 file_encrypt("secret.txt", "encrypted.age",
-    public = "age1xyz...", armor = TRUE)
+  public = "age1xyz...", armor = TRUE)
 }
 }
