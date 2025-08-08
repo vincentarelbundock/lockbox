@@ -5,8 +5,7 @@ with_env <- function(env_vars, expr) {
     if (is.na(current)) NULL else current
   })
   names(original) <- names(env_vars)
-  # Set new values
-  do.call(Sys.setenv, env_vars)
+
   # Ensure restoration happens even if expr fails
   on.exit({
     for (name in names(original)) {
@@ -17,6 +16,10 @@ with_env <- function(env_vars, expr) {
       }
     }
   })
+
+  # Set new values
+  do.call(Sys.setenv, env_vars)
+
   # Execute expression
   expr
 }

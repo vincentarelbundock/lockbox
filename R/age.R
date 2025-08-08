@@ -44,9 +44,13 @@ file_encrypt <- function(
     age_encrypt_key(input, output, public, armor)
   } else {
     # Use passphrase encryption - prompt user for passphrase
-    passphrase <- getPass::getPass("Enter passphrase for encryption: ")
+    passphrase <- getPass::getPass("Enter password for encryption or press Enter to get a random string:\n")
     if (nchar(passphrase) == 0) {
-      stop("Empty passphrase not allowed.", call. = FALSE)
+      # Generate random passphrase if user provided empty input
+      random_length <- sample(30:40, 1)
+      passphrase <- stringi::stri_rand_strings(1, random_length, pattern = "[A-Za-z0-9]")
+      message("Your random password: ", passphrase)
+      message("Save this password. You will need it to decrypt the file.")
     }
     # Armor is ignored for passphrase encryption
     age_encrypt_passphrase(input, output, passphrase)

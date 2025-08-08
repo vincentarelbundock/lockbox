@@ -17,6 +17,7 @@ Depends:
 Imports:
     checkmate,
     getPass,
+    stringi,
     yaml
 SystemRequirements: sops, Cargo (Rust's package manager), rustc
 RoxygenNote: 7.3.2
