@@ -11,4 +11,3 @@ name = 'lockbox'
 
 [dependencies]
 extendr-api = '*'
-age = { version = '0.10', features = ['armor', 'ssh'] }
