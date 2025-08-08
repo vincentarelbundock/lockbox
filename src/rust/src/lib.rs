@@ -73,7 +73,7 @@ fn parse_identities_from_key_file(key_content: &str) -> Result<Vec<Box<dyn age::
 /// @keywords internal
 /// @noRd
 #[extendr]
-fn age_decrypt_passphrase(encrypted_file_path: &str, passphrase: &str) -> Result<Raw> {
+fn age_decrypt_with_passphrase(encrypted_file_path: &str, passphrase: &str) -> Result<Raw> {
     use age::secrecy::SecretString;
     use std::iter;
 
@@ -97,7 +97,7 @@ fn age_decrypt_passphrase(encrypted_file_path: &str, passphrase: &str) -> Result
 /// @keywords internal
 /// @noRd
 #[extendr]
-fn age_decrypt_key(encrypted_file_path: &str, private_key_path: &str) -> Result<Raw> {
+fn age_decrypt_with_key(encrypted_file_path: &str, private_key_path: &str) -> Result<Raw> {
     // Read the encrypted file and private key file
     let file_content = std::fs::read(encrypted_file_path)
         .map_err(|_| Error::Other("Failed to read encrypted file".to_string()))?;
@@ -279,8 +279,8 @@ fn age_encrypt_passphrase(input_file_path: &str, output_file_path: &str, passphr
 // This macro generates the necessary C bindings for R to call our Rust functions
 extendr_module! {
     mod lockbox;
-    fn age_decrypt_passphrase;
-    fn age_decrypt_key;
+    fn age_decrypt_with_passphrase;
+    fn age_decrypt_with_key;
     fn age_generate_key;
     fn age_extract_public_key;
     fn age_encrypt_key;

@@ -103,7 +103,7 @@ file_decrypt <- function(
     # Use key-based decryption
     checkmate::assert_file_exists(private)
     private <- normalizePath(private, mustWork = TRUE)
-    decrypted_bytes <- age_decrypt_key(
+    decrypted_bytes <- age_decrypt_with_key(
       encrypted_file_path = input,
       private_key_path = private
     )
@@ -113,7 +113,7 @@ file_decrypt <- function(
     if (nchar(passphrase) == 0) {
       stop("Empty passphrase not allowed.", call. = FALSE)
     }
-    decrypted_bytes <- age_decrypt_passphrase(
+    decrypted_bytes <- age_decrypt_with_passphrase(
       encrypted_file_path = input,
       passphrase = passphrase
     )
@@ -140,21 +140,21 @@ file_decrypt <- function(
 #' @param keyfile Character string, path where the private key will be saved.
 #'   The file will contain both public and private key information.
 #'
-#' @return A `lockbox_key` object which is a character string containing the 
-#'   public key (age recipient identifier) with a `created` attribute containing 
+#' @return A `lockbox_key` object which is a character string containing the
+#'   public key (age recipient identifier) with a `created` attribute containing
 #'   the timestamp of key creation.
 #'
 #' @section Security Warning:
 #' The private key file is created using the system's default file permissions,
 #' which may be readable by other users (typically 0644 on Unix systems). After
 #' generating a key, you should immediately set restrictive permissions:
-#' 
+#'
 #' \code{
 #' # On Unix/Linux/macOS:
 #' key <- key_generate("my_identity.key")
 #' Sys.chmod("my_identity.key", "0600")  # Owner read/write only
 #' }
-#' 
+#'
 #' On Windows, store keys in a secure location like `%USERPROFILE%\\.config\\lockbox\\`
 #' and rely on NTFS ACLs for protection.
 #'
@@ -162,9 +162,9 @@ file_decrypt <- function(
 #' \dontrun{
 #' # Generate and save new key to file
 #' key <- key_generate("my_identity.key")
-#' print(key)  # prints the public key
-#' print(attr(key, "created"))  # prints creation time
-#' 
+#' print(key) # prints the public key
+#' print(attr(key, "created")) # prints creation time
+#'
 #' # IMPORTANT: Secure the key file permissions
 #' Sys.chmod("my_identity.key", "0600")
 #' }

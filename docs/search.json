@@ -1,0 +1,318 @@
+[
+  {
+    "objectID": "CITATION.html",
+    "href": "CITATION.html",
+    "title": "Citation",
+    "section": "",
+    "text": "Citation\nTo cite package ‘lockbox’ in publications use:\n\nArel-Bundock V (2025). lockbox: Simple File Encryption and Secrets Management in R. R package version 0.0.1.1, https://vincentarelbundock.github.io/lockbox.",
+    "crumbs": [
+      "Citation"
+    ]
+  },
+  {
+    "objectID": "LICENSE.html",
+    "href": "LICENSE.html",
+    "title": "MIT License",
+    "section": "",
+    "text": "MIT License\nCopyright (c) 2025 lockbox authors\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the “Software”), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\nTHE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
+    "crumbs": [
+      "License"
+    ]
+  },
+  {
+    "objectID": "man/print.lockbox_key.html",
+    "href": "man/print.lockbox_key.html",
+    "title": "lockbox",
+    "section": "",
+    "text": "Print method for lockbox_key objects\n\n\n\n## S3 method for class 'lockbox_key'\nprint(x, ...)\n\n\n\n\n\n\n\nx\n\n\nA lockbox_key object.",
+    "crumbs": [
+      "Reference",
+      "print.lockbox_key"
+    ]
+  },
+  {
+    "objectID": "man/print.lockbox_key.html#print-method-for-lockbox_key-objects",
+    "href": "man/print.lockbox_key.html#print-method-for-lockbox_key-objects",
+    "title": "lockbox",
+    "section": "",
+    "text": "Print method for lockbox_key objects\n\n\n\n## S3 method for class 'lockbox_key'\nprint(x, ...)\n\n\n\n\n\n\n\nx\n\n\nA lockbox_key object.",
+    "crumbs": [
+      "Reference",
+      "print.lockbox_key"
+    ]
+  },
+  {
+    "objectID": "man/key_generate.html",
+    "href": "man/key_generate.html",
+    "title": "lockbox",
+    "section": "",
+    "text": "Create a new age encryption key pair and save it to a file. The key pair consists of a public key (for encryption) and a private key (for decryption). If the specified key file already exists, the function will error to prevent overwriting.\n\n\n\nkey_generate(keyfile = NULL)\n\n\n\n\n\n\n\nkeyfile\n\n\nCharacter string, path where the private key will be saved. The file will contain both public and private key information.\n\n\n\n\n\n\nA lockbox_key object which is a character string containing the public key (age recipient identifier) with a created attribute containing the timestamp of key creation.\n\n\n\nThe private key file is created using the system’s default file permissions, which may be readable by other users (typically 0644 on Unix systems). After generating a key, you should immediately set restrictive permissions:\n # On Unix/Linux/macOS: key &lt;- key_generate(“my_identity.key”) Sys.chmod(“my_identity.key”, “0600”) # Owner read/write only \nOn Windows, store keys in a secure location like %USERPROFILE%\\.config\\lockbox\\ and rely on NTFS ACLs for protection.\n\n\n\n\nlibrary(\"lockbox\")\n\n# Generate and save new key to file\nkey &lt;- key_generate(\"my_identity.key\")\nprint(key) # prints the public key\nprint(attr(key, \"created\")) # prints creation time\n\n# IMPORTANT: Secure the key file permissions\nSys.chmod(\"my_identity.key\", \"0600\")",
+    "crumbs": [
+      "Reference",
+      "key_generate"
+    ]
+  },
+  {
+    "objectID": "man/key_generate.html#generate-a-new-age-identity-key-pair",
+    "href": "man/key_generate.html#generate-a-new-age-identity-key-pair",
+    "title": "lockbox",
+    "section": "",
+    "text": "Create a new age encryption key pair and save it to a file. The key pair consists of a public key (for encryption) and a private key (for decryption). If the specified key file already exists, the function will error to prevent overwriting.\n\n\n\nkey_generate(keyfile = NULL)\n\n\n\n\n\n\n\nkeyfile\n\n\nCharacter string, path where the private key will be saved. The file will contain both public and private key information.\n\n\n\n\n\n\nA lockbox_key object which is a character string containing the public key (age recipient identifier) with a created attribute containing the timestamp of key creation.\n\n\n\nThe private key file is created using the system’s default file permissions, which may be readable by other users (typically 0644 on Unix systems). After generating a key, you should immediately set restrictive permissions:\n # On Unix/Linux/macOS: key &lt;- key_generate(“my_identity.key”) Sys.chmod(“my_identity.key”, “0600”) # Owner read/write only \nOn Windows, store keys in a secure location like %USERPROFILE%\\.config\\lockbox\\ and rely on NTFS ACLs for protection.\n\n\n\n\nlibrary(\"lockbox\")\n\n# Generate and save new key to file\nkey &lt;- key_generate(\"my_identity.key\")\nprint(key) # prints the public key\nprint(attr(key, \"created\")) # prints creation time\n\n# IMPORTANT: Secure the key file permissions\nSys.chmod(\"my_identity.key\", \"0600\")",
+    "crumbs": [
+      "Reference",
+      "key_generate"
+    ]
+  },
+  {
+    "objectID": "man/secrets_encrypt.html",
+    "href": "man/secrets_encrypt.html",
+    "title": "lockbox",
+    "section": "",
+    "text": "Creates or updates a SOPS-managed and age-encrypted file with secrets. For new files, requires public age keys. For existing files, requires the private key to decrypt and re-encrypt with new secrets merged in.\n\n\n\nsecrets_encrypt(lockbox = NULL, secrets = NULL, public = NULL, private = NULL)\n\n\n\n\n\n\n\nlockbox\n\n\nCharacter string, path to the encrypted file to create/update\n\n\n\n\nsecrets\n\n\nNamed list of secrets to encrypt (keys become variable names)\n\n\n\n\npublic\n\n\nCharacter vector of age public keys (required for new files)\n\n\n\n\nprivate\n\n\nCharacter string, path to private key file (required for updates, can be password-protected age file)\n\n\n\n\n\n\nInvisible NULL\n\n\n\n\nlibrary(\"lockbox\")\n\n# Generate a key pair\nkey &lt;- key_generate.R(\"private.key\")\n\n# Create new encrypted lockbox file\nsecrets &lt;- list(\n  API_KEY = \"your-api-key-here\",\n  DATABASE_URL = \"postgresql://user:pass@host:5432/db\",\n  AWS_ACCESS_KEY_ID = \"AKIAIOSFODNN7EXAMPLE\"\n)\nsecrets_encrypt(\n  lockbox = \"lockbox.yaml\",\n  secrets = secrets,\n  public = key$public\n)\n\n# Update existing lockbox file\nsecrets_encrypt(\n  lockbox = \"lockbox.yaml\",\n  secrets = list(API_KEY = \"a-new-api-key\"),\n  private = \"private.key\"\n)",
+    "crumbs": [
+      "Reference",
+      "secrets_encrypt"
+    ]
+  },
+  {
+    "objectID": "man/secrets_encrypt.html#encrypt-secrets-using-sops",
+    "href": "man/secrets_encrypt.html#encrypt-secrets-using-sops",
+    "title": "lockbox",
+    "section": "",
+    "text": "Creates or updates a SOPS-managed and age-encrypted file with secrets. For new files, requires public age keys. For existing files, requires the private key to decrypt and re-encrypt with new secrets merged in.\n\n\n\nsecrets_encrypt(lockbox = NULL, secrets = NULL, public = NULL, private = NULL)\n\n\n\n\n\n\n\nlockbox\n\n\nCharacter string, path to the encrypted file to create/update\n\n\n\n\nsecrets\n\n\nNamed list of secrets to encrypt (keys become variable names)\n\n\n\n\npublic\n\n\nCharacter vector of age public keys (required for new files)\n\n\n\n\nprivate\n\n\nCharacter string, path to private key file (required for updates, can be password-protected age file)\n\n\n\n\n\n\nInvisible NULL\n\n\n\n\nlibrary(\"lockbox\")\n\n# Generate a key pair\nkey &lt;- key_generate.R(\"private.key\")\n\n# Create new encrypted lockbox file\nsecrets &lt;- list(\n  API_KEY = \"your-api-key-here\",\n  DATABASE_URL = \"postgresql://user:pass@host:5432/db\",\n  AWS_ACCESS_KEY_ID = \"AKIAIOSFODNN7EXAMPLE\"\n)\nsecrets_encrypt(\n  lockbox = \"lockbox.yaml\",\n  secrets = secrets,\n  public = key$public\n)\n\n# Update existing lockbox file\nsecrets_encrypt(\n  lockbox = \"lockbox.yaml\",\n  secrets = list(API_KEY = \"a-new-api-key\"),\n  private = \"private.key\"\n)",
+    "crumbs": [
+      "Reference",
+      "secrets_encrypt"
+    ]
+  },
+  {
+    "objectID": "man/secrets_decrypt.html",
+    "href": "man/secrets_decrypt.html",
+    "title": "lockbox",
+    "section": "",
+    "text": "Decrypts a SOPS-encrypted file and returns the secrets as a named list. Automatically handles password-protected age private key files by prompting for the password when needed.\n\n\n\nsecrets_decrypt(lockbox = NULL, private = NULL)\n\n\n\n\n\n\n\nlockbox\n\n\nCharacter string, path to the SOPS-encrypted file\n\n\n\n\nprivate\n\n\nCharacter string, path to private age key file (can be password-protected)\n\n\n\n\n\n\nNamed list of decrypted secrets\n\n\n\n\nlibrary(\"lockbox\")\n\n# Decrypt with regular private key\nsecrets_decrypt(\n  lockbox = \"lockbox.yaml\",\n  private = \"private.key\"\n)\n\n# Decrypt with password-protected private key (will prompt for password)\nsecrets_decrypt(\n  lockbox = \"lockbox.yaml\",\n  private = \"private.key.age\"\n)\n\n# Access individual secrets\nsecrets_decrypt(\n  lockbox = \"lockbox.yaml\",\n  private = \"private.key\"\n)$API_KEY",
+    "crumbs": [
+      "Reference",
+      "secrets_decrypt"
+    ]
+  },
+  {
+    "objectID": "man/secrets_decrypt.html#decrypt-secrets-from-sops-file",
+    "href": "man/secrets_decrypt.html#decrypt-secrets-from-sops-file",
+    "title": "lockbox",
+    "section": "",
+    "text": "Decrypts a SOPS-encrypted file and returns the secrets as a named list. Automatically handles password-protected age private key files by prompting for the password when needed.\n\n\n\nsecrets_decrypt(lockbox = NULL, private = NULL)\n\n\n\n\n\n\n\nlockbox\n\n\nCharacter string, path to the SOPS-encrypted file\n\n\n\n\nprivate\n\n\nCharacter string, path to private age key file (can be password-protected)\n\n\n\n\n\n\nNamed list of decrypted secrets\n\n\n\n\nlibrary(\"lockbox\")\n\n# Decrypt with regular private key\nsecrets_decrypt(\n  lockbox = \"lockbox.yaml\",\n  private = \"private.key\"\n)\n\n# Decrypt with password-protected private key (will prompt for password)\nsecrets_decrypt(\n  lockbox = \"lockbox.yaml\",\n  private = \"private.key.age\"\n)\n\n# Access individual secrets\nsecrets_decrypt(\n  lockbox = \"lockbox.yaml\",\n  private = \"private.key\"\n)$API_KEY",
+    "crumbs": [
+      "Reference",
+      "secrets_decrypt"
+    ]
+  },
+  {
+    "objectID": "man/file_decrypt.html",
+    "href": "man/file_decrypt.html",
+    "title": "lockbox",
+    "section": "",
+    "text": "Decrypts a file that was encrypted with age. Can decrypt using a private key file (for key-based decryption) or with a passphrase (when no private key provided). If no private key is specified, will prompt for a passphrase interactively.\n\n\n\nfile_decrypt(input = NULL, output = NULL, private = NULL)\n\n\n\n\n\n\n\ninput\n\n\nCharacter string, path to the age-encrypted file to decrypt\n\n\n\n\noutput\n\n\nCharacter string, path for the decrypted output file. If NULL, returns content as string.\n\n\n\n\nprivate\n\n\nCharacter string, path to the private age key file. If NULL, will use passphrase decryption and prompt for password.\n\n\n\n\n\n\nIf output is provided, returns invisible path to the output file. If output is NULL, returns decrypted content as string.\n\n\n\n\nlibrary(\"lockbox\")\n\n# Decrypt to file with private key\nfile_decrypt(\"secret.txt.age\", \"secret.txt\", private = \"identity.key\")\n\n# Decrypt to file with passphrase (will prompt)\nfile_decrypt(\"secret.txt.age\", \"secret.txt\")\n\n# Decrypt to string (no file output)\ncontent &lt;- file_decrypt(\"secret.txt.age\", output = NULL, private = \"identity.key\")\ncontent &lt;- file_decrypt(\"secret.txt.age\", output = NULL) # will prompt for passphrase",
+    "crumbs": [
+      "Reference",
+      "file_decrypt"
+    ]
+  },
+  {
+    "objectID": "man/file_decrypt.html#decrypt-an-age-encrypted-file",
+    "href": "man/file_decrypt.html#decrypt-an-age-encrypted-file",
+    "title": "lockbox",
+    "section": "",
+    "text": "Decrypts a file that was encrypted with age. Can decrypt using a private key file (for key-based decryption) or with a passphrase (when no private key provided). If no private key is specified, will prompt for a passphrase interactively.\n\n\n\nfile_decrypt(input = NULL, output = NULL, private = NULL)\n\n\n\n\n\n\n\ninput\n\n\nCharacter string, path to the age-encrypted file to decrypt\n\n\n\n\noutput\n\n\nCharacter string, path for the decrypted output file. If NULL, returns content as string.\n\n\n\n\nprivate\n\n\nCharacter string, path to the private age key file. If NULL, will use passphrase decryption and prompt for password.\n\n\n\n\n\n\nIf output is provided, returns invisible path to the output file. If output is NULL, returns decrypted content as string.\n\n\n\n\nlibrary(\"lockbox\")\n\n# Decrypt to file with private key\nfile_decrypt(\"secret.txt.age\", \"secret.txt\", private = \"identity.key\")\n\n# Decrypt to file with passphrase (will prompt)\nfile_decrypt(\"secret.txt.age\", \"secret.txt\")\n\n# Decrypt to string (no file output)\ncontent &lt;- file_decrypt(\"secret.txt.age\", output = NULL, private = \"identity.key\")\ncontent &lt;- file_decrypt(\"secret.txt.age\", output = NULL) # will prompt for passphrase",
+    "crumbs": [
+      "Reference",
+      "file_decrypt"
+    ]
+  },
+  {
+    "objectID": "man/file_encrypt.html",
+    "href": "man/file_encrypt.html",
+    "title": "lockbox",
+    "section": "",
+    "text": "Encrypts a file using the age encryption tool. Can encrypt with public keys (for key-based encryption) or with a passphrase (when no public keys provided). If no public keys are specified, will prompt for a passphrase interactively.\n\n\n\nfile_encrypt(\n  input = NULL,\n  output = if (!is.null(input)) paste0(input, \".age\") else NULL,\n  public = NULL,\n  armor = FALSE\n)\n\n\n\n\n\n\n\ninput\n\n\nCharacter string, path to the file to encrypt\n\n\n\n\noutput\n\n\nCharacter string, path for the encrypted output file. Defaults to input + \".age\" extension\n\n\n\n\npublic\n\n\nCharacter vector of age public keys (recipients). If NULL, will use passphrase encryption and prompt for password.\n\n\n\n\narmor\n\n\nLogical, whether to use ASCII armor format (only applies to public key encryption)\n\n\n\n\n\n\nInvisible NULL\n\n\n\n\nlibrary(\"lockbox\")\n\n# Encrypt with public key\nfile_encrypt(\"secret.txt\", public = \"age1xyz...\")\n\n# Encrypt with passphrase (will prompt)\nfile_encrypt(\"secret.txt\")\n\n# Encrypt with custom output path and armor\nfile_encrypt(\"secret.txt\", \"encrypted.age\",\n  public = \"age1xyz...\", armor = TRUE)",
+    "crumbs": [
+      "Reference",
+      "file_encrypt"
+    ]
+  },
+  {
+    "objectID": "man/file_encrypt.html#encrypt-a-file-using-age",
+    "href": "man/file_encrypt.html#encrypt-a-file-using-age",
+    "title": "lockbox",
+    "section": "",
+    "text": "Encrypts a file using the age encryption tool. Can encrypt with public keys (for key-based encryption) or with a passphrase (when no public keys provided). If no public keys are specified, will prompt for a passphrase interactively.\n\n\n\nfile_encrypt(\n  input = NULL,\n  output = if (!is.null(input)) paste0(input, \".age\") else NULL,\n  public = NULL,\n  armor = FALSE\n)\n\n\n\n\n\n\n\ninput\n\n\nCharacter string, path to the file to encrypt\n\n\n\n\noutput\n\n\nCharacter string, path for the encrypted output file. Defaults to input + \".age\" extension\n\n\n\n\npublic\n\n\nCharacter vector of age public keys (recipients). If NULL, will use passphrase encryption and prompt for password.\n\n\n\n\narmor\n\n\nLogical, whether to use ASCII armor format (only applies to public key encryption)\n\n\n\n\n\n\nInvisible NULL\n\n\n\n\nlibrary(\"lockbox\")\n\n# Encrypt with public key\nfile_encrypt(\"secret.txt\", public = \"age1xyz...\")\n\n# Encrypt with passphrase (will prompt)\nfile_encrypt(\"secret.txt\")\n\n# Encrypt with custom output path and armor\nfile_encrypt(\"secret.txt\", \"encrypted.age\",\n  public = \"age1xyz...\", armor = TRUE)",
+    "crumbs": [
+      "Reference",
+      "file_encrypt"
+    ]
+  },
+  {
+    "objectID": "man/key_recipient.html",
+    "href": "man/key_recipient.html",
+    "title": "lockbox",
+    "section": "",
+    "text": "Read an existing age key file and extract the public key component that can be used as a recipient identifier for encryption.\n\n\n\nkey_recipient(keyfile = NULL)\n\n\n\n\n\n\n\nkeyfile\n\n\nCharacter string, path to an existing age key file.\n\n\n\n\n\n\nA lockbox_key object containing:\n\n\n$public: The public key (age recipient identifier)\n\n\n\n\n\n\nlibrary(\"lockbox\")\n\n# Extract public key from existing key file\nrecipient &lt;- key_recipient(\"my_identity.key\")\nprint(recipient$public)",
+    "crumbs": [
+      "Reference",
+      "key_recipient"
+    ]
+  },
+  {
+    "objectID": "man/key_recipient.html#extract-public-key-recipient-from-existing-age-key-file",
+    "href": "man/key_recipient.html#extract-public-key-recipient-from-existing-age-key-file",
+    "title": "lockbox",
+    "section": "",
+    "text": "Read an existing age key file and extract the public key component that can be used as a recipient identifier for encryption.\n\n\n\nkey_recipient(keyfile = NULL)\n\n\n\n\n\n\n\nkeyfile\n\n\nCharacter string, path to an existing age key file.\n\n\n\n\n\n\nA lockbox_key object containing:\n\n\n$public: The public key (age recipient identifier)\n\n\n\n\n\n\nlibrary(\"lockbox\")\n\n# Extract public key from existing key file\nrecipient &lt;- key_recipient(\"my_identity.key\")\nprint(recipient$public)",
+    "crumbs": [
+      "Reference",
+      "key_recipient"
+    ]
+  },
+  {
+    "objectID": "man/secrets_export.html",
+    "href": "man/secrets_export.html",
+    "title": "lockbox",
+    "section": "",
+    "text": "Decrypts secrets from a SOPS file and sets them as environment variables in the current R session. Each secret becomes an environment variable with the same name.\n\n\n\nsecrets_export(lockbox = NULL, private = NULL)\n\n\n\n\n\n\n\nlockbox\n\n\nCharacter string, path to the SOPS-encrypted file\n\n\n\n\nprivate\n\n\nCharacter string, path to private age key file (can be password-protected)\n\n\n\n\n\n\nInvisible character vector of exported variable names\n\n\n\n\nlibrary(\"lockbox\")\n\n# Export all secrets as environment variables\nsecrets_export(\n  lockbox = \"lockbox.yaml\",\n  private = \"private.key\"\n)\n\n# Now secrets are available as environment variables\nSys.getenv(\"API_KEY\")\nSys.getenv(\"DATABASE_URL\")",
+    "crumbs": [
+      "Reference",
+      "secrets_export"
+    ]
+  },
+  {
+    "objectID": "man/secrets_export.html#export-sops-secrets-to-environment-variables",
+    "href": "man/secrets_export.html#export-sops-secrets-to-environment-variables",
+    "title": "lockbox",
+    "section": "",
+    "text": "Decrypts secrets from a SOPS file and sets them as environment variables in the current R session. Each secret becomes an environment variable with the same name.\n\n\n\nsecrets_export(lockbox = NULL, private = NULL)\n\n\n\n\n\n\n\nlockbox\n\n\nCharacter string, path to the SOPS-encrypted file\n\n\n\n\nprivate\n\n\nCharacter string, path to private age key file (can be password-protected)\n\n\n\n\n\n\nInvisible character vector of exported variable names\n\n\n\n\nlibrary(\"lockbox\")\n\n# Export all secrets as environment variables\nsecrets_export(\n  lockbox = \"lockbox.yaml\",\n  private = \"private.key\"\n)\n\n# Now secrets are available as environment variables\nSys.getenv(\"API_KEY\")\nSys.getenv(\"DATABASE_URL\")",
+    "crumbs": [
+      "Reference",
+      "secrets_export"
+    ]
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "lockbox: Simple File Encryption and Secrets Management in R",
+    "section": "",
+    "text": "Simple file encryption and secret management for R using modern cryptographic tools. Provides functions to encrypt/decrypt files with ‘age’ and manage secrets in encrypted YAML files with ‘SOPS’. Secrets can be easily exported as environment variables for use with APIs and services. Supports both file-based and in-memory key management workflows.\n\n\n\n\n\n\n\nImportant\n\n\n\nThis package is designed for Vincent’s personal use. If it is useful to you, great! But there are no guarantees that the implemented workflows are totally secure, or that the user interface will be remain stable.\n\n\n\n\nlockbox targets two main use cases:\n\nFile Encryption: R users need an easy way to encrypt and decrypt files using simple, modern, secure encryption methods. The package supports simple passwords and support key pair workflows.\nSecrets Management: Many R packages, functions, and services rely on environment variables to retrieve users’ API keys, security tokens, and assorted secrets (ex: LLM APIs, AWS services, database locations, etc.). Users need a secure way to store secrets in an encrypted file, and a convenient way to export those secrets as environment variables. Although there are solutions for this outside R, it is useful to do it within to ensure that variables are accessible in the current R session.\n\n\n\n\nTo solve these problems, lockbox provides a convenience wrapper around two command line tools:\n\nThe age encryption tool.\nThe SOPS secrets manager.\n\n\n\nage is a simple and modern file encryption tool with small keys, no configuration options, and high security. It is designed to replace tools like GPG for most file encryption tasks.\nThere are two main encryption strategies with age: passphrase or key pairs.\nThe first is simplest. A passphrase is assigned when encrypting the file. Then, whenever someone wishes to decrypt the file, they are prompted to supply that same password.\nThe second strategy relies on a pair of keys:\n\nPublic key: a shareable string used for encryption.\nPrivate key: a secret file for decryption.\n\nThis situation illustrates the use of key pairs:\n\nBob wants to send a secret file to Alice.\nAlice shares her public key with Bob.\nBob uses Alice’s public key to encrypt the file.\nBob sends the encrypted file to Alice.\nAlice uses her private key to decrypt the file.\n\nAnyone with your public key can encrypt files for you, but only you can decrypt them with your private key.\n\n\n\nSOPS is a secrets manager which lockbox uses for two main purposes:\n\nOrganize secrets in an encrypted “lockbox” file in YAML format.\nExport the secrets held in a lockbox as environment variables, so that other R processes and functions can access API keys, security tokens, etc.\n\n\n\n\n\n\n\nWarning\n\n\n\nYou must never edit your lockbox.yaml file manually. Always use the provided functions or sops to ensure the file remains valid and encrypted.\n\n\n\n\n\n\nThe lockbox package uses the age encryption format through a Rust implementation, so you need to install Rust to compile the package. The easiest way to install Rust is through rustup:\n# Install Rust (all platforms)\ncurl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh\n# Follow the installation prompts, then restart your terminal\nFor secrets management, you also need to install the sops command line tool:\n\nSOPS website\n\n# macOS\nbrew install sops\n\n# Windows\nchoco install sops\n\n# Linux\n# Use your distribution's package manager\nOnce Rust and SOPS are installed, you can install the development version of lockbox from Github:\nlibrary(remotes)\ninstall_github(\"vincentarelbundock/lockbox\")\n\n\n\nOur first step is to create a private/public key pair using the key_generate() function. The private key is saved to a file and should be kept secret. The public key can be shared and is used to encrypt data.\n\nlibrary(lockbox)\nkey &lt;- key_generate(\"private.key\")\nkey\n\nAge key created at 2025-08-08 15:58:49 \nPublic key: age1e74pz3rc6r0zxznh8ht4yw5shzcnjywz0z3ua7lt8zkcx9ps6etsthksap\n\n\nThis command created a local “identity file,” which holds both the public and private keys. The function returns the public key directly as a string.\n\nfile.exists(\"private.key\")\n\n[1] TRUE\n\n\n\n\n\n\n\n\nWarning\n\n\n\nDo not share the private.key file. It should be kept secret and secure.\nSecurity Note: The private key file is created with default system permissions, which may be readable by other users. After generating a key, set secure permissions:\n# On Unix/Linux/macOS:\nSys.chmod(\"private.key\", \"0600\")  # Owner read/write only\n\n\n\n\n\nlockbox can encrypt and decrypt arbitrary files. To illustrate, let’s create a file with some text in it.\n\n# write file\ncat(\"Very sensitive data.\\n\", file = \"sensitive.txt\")\n\n# make sure we can read it\nreadLines(\"sensitive.txt\")\n\n[1] \"Very sensitive data.\"\n\n\nNow, let’s use the public key and the file_encrypt() function to encrypt the file. The .age suffix is added automatically to the file name, and the content becomes gibberish.\n\nfile_encrypt(\n  input = \"sensitive.txt\",\n  public = key\n)\n\nreadLines(\"sensitive.txt.age\")\n\n[1] \"age-encryption.org/v1\"                                                                                                                          \n[2] \"-&gt; X25519 +5a5epsvECX2i/5DxNm6kj2mVSR5X4RmG3kgfsh0AB4\"                                                                                          \n[3] \"YizR2zgViZs9ylxtCalqbGzLifoVZVzEs7rH/9VL6KQ\"                                                                                                    \n[4] \"-&gt; M1}V_q9/-grease\"                                                                                                                             \n[5] \"ueFFpFYdtCqH48TnTrPCPravXV2vqUDckmFgQgK7K2ma4MyKr/Grjz2e\"                                                                                       \n[6] \"--- hvBoNGC9n6CsIyklFTXOExdT5plpEJ4KA086qNdmk8Y\"                                                                                                \n[7] \"H\\f\\xc91\\xf9]\\016:\\xdb\\003G\\034\\xd5ه2\\020\\xecc\\024}o\\x8c?\\xa9\\xa1\\xc5;I\\025 \\xa9sJ\\xf9\\xaf&lt;\\xce\\xef\\xf4\\xb8{c\\xf0\\xf6j\\xf5\\xa90\\x9f\\xf5\\xe0\\xca\"\n\n\nFinally, we can decrypt the file using the private key file. The decrypted content is written to the specified output file.\n\nfile_decrypt(\n  input = \"sensitive.txt.age\",\n  output = \"sensitive_decrypted.txt\",\n  private = \"private.key\"\n)\n\nreadLines(\"sensitive_decrypted.txt\")\n\n[1] \"Very sensitive data.\"\n\n\n\n\n\nSeveral packages and applications require users to export secrets as environment variables for easy access. For example, you may need to store a security key to access the API of an LLM provider; the location of your private database; or credentials to access AWS services.\nGenerally speaking, we do not want to store those secrets in plain text files. Instead, we can store them in an encrypted YAML file, and use a helper function to decrypt the file and export environment variables.\nFirst, we define a named list with the values that we wish to store securely. Then, we call secrets_encrypt() to encrypt those secrets into our lockbox file. Again, we use the public key for encryption.\n\nsecrets &lt;- list(\n  API_KEY = \"your-api-key-here\",\n  DATABASE_URL = \"postgresql://user:pass@host:5432/db\",\n  AWS_ACCESS_KEY_ID = \"AKIAIOSFODNN7EXAMPLE\"\n)\n\nsecrets_encrypt(\n  lockbox = \"lockbox.yaml\",\n  secrets = secrets,\n  public = key\n)\n\n\n\n\nNow, we can retrieve all secrets using our private key file.\n\nsecrets_decrypt(\n  lockbox = \"lockbox.yaml\",\n  private = \"private.key\"\n)\n\n$API_KEY\n[1] \"your-api-key-here\"\n\n$DATABASE_URL\n[1] \"postgresql://user:pass@host:5432/db\"\n\n$AWS_ACCESS_KEY_ID\n[1] \"AKIAIOSFODNN7EXAMPLE\"\n\n\n\n\n\nTo modify existing secrets or to add new ones, we can simply call secrets_encrypt() again. In this case, however, we need to supply the private key file because modifying requires us to read the existing secrets.\n\nsecrets_encrypt(\n  lockbox = \"lockbox.yaml\",\n  secrets = list(\"API_KEY\" = \"a-new-api-key\"),\n  private = \"private.key\"\n)\n\nWe see that the API_KEY value has indeed been updated.\n\nsecrets_decrypt(\n  lockbox = \"lockbox.yaml\",\n  private = \"private.key\")$API_KEY\n\n[1] \"a-new-api-key\"\n\n\n\n\n\nFinally, we can export all secrets from the lockbox file as environment variables. This is useful when running applications that rely on environment variables for configuration.\n\nsecrets_export(\n  lockbox = \"lockbox.yaml\",\n  private = \"private.key\"\n)\n\nAnd we see that the secrets are indeed available in the environment.\n\nSys.getenv(\"API_KEY\")\n\n[1] \"a-new-api-key\"\n\nSys.getenv(\"DATABASE_URL\")\n\n[1] \"postgresql://user:pass@host:5432/db\"\n\n\n\n\n\nFor even more security, you can encrypt your private key file itself using a passphrase. This adds an extra layer of protection - even if someone gains access to your key file, they would need to know the passphrase to use it.\n\n\n\nfile_encrypt(\n  input = \"private.key\",\n  output = \"private.key.age\"\n)\n# You will be prompted to enter a secure passphrase\n\nWhen you run this command, you’ll be prompted to enter a passphrase. Make sure you choose a strong, memorable passphrase as you’ll need it every time you use the encrypted key file.\n\n\n\n\nunlink(\"private.key\")\n\n\n\n\nNow you can use your password-protected key file with all the same functions. The lockbox package will automatically detect that it’s an encrypted key file and prompt you for the passphrase when needed.\n\nsecrets_decrypt(\n  lockbox = \"lockbox.yaml\",\n  private = \"private.key.age\"\n)\n# You will be prompted for your passphrase\n\nsecrets_export(\n  lockbox = \"lockbox.yaml\",\n  private = \"private.key.age\"\n)\n# You will be prompted for your passphrase\n\n\n\n\n\n\n\n\n\n\n\nWarning\n\n\n\nTemporary File Handling\nThere are two cases where lockbox creates temporary files with sensitive data:\n\nWhen the private key used in secrets_decrypt() or file_decrypt() is itself passphrase-encrypted.\nWhen calling secrets_encrypt() to modify an existing lockbox file.\n\nIn both cases, a file is written to disk at tempfile(), and is automatically deleted using on.exit() and unlink() to ensure cleanup on function exit even if an error occurs.\nWhile this approach follows R best practices for temporary file handling, users with heightened security requirements may prefer to run age and sops directly from the command line to maintain full control over key file handling.",
+    "crumbs": [
+      "Home"
+    ]
+  },
+  {
+    "objectID": "index.html#why",
+    "href": "index.html#why",
+    "title": "lockbox: Simple File Encryption and Secrets Management in R",
+    "section": "",
+    "text": "lockbox targets two main use cases:\n\nFile Encryption: R users need an easy way to encrypt and decrypt files using simple, modern, secure encryption methods. The package supports simple passwords and support key pair workflows.\nSecrets Management: Many R packages, functions, and services rely on environment variables to retrieve users’ API keys, security tokens, and assorted secrets (ex: LLM APIs, AWS services, database locations, etc.). Users need a secure way to store secrets in an encrypted file, and a convenient way to export those secrets as environment variables. Although there are solutions for this outside R, it is useful to do it within to ensure that variables are accessible in the current R session.",
+    "crumbs": [
+      "Home"
+    ]
+  },
+  {
+    "objectID": "index.html#how",
+    "href": "index.html#how",
+    "title": "lockbox: Simple File Encryption and Secrets Management in R",
+    "section": "",
+    "text": "To solve these problems, lockbox provides a convenience wrapper around two command line tools:\n\nThe age encryption tool.\nThe SOPS secrets manager.\n\n\n\nage is a simple and modern file encryption tool with small keys, no configuration options, and high security. It is designed to replace tools like GPG for most file encryption tasks.\nThere are two main encryption strategies with age: passphrase or key pairs.\nThe first is simplest. A passphrase is assigned when encrypting the file. Then, whenever someone wishes to decrypt the file, they are prompted to supply that same password.\nThe second strategy relies on a pair of keys:\n\nPublic key: a shareable string used for encryption.\nPrivate key: a secret file for decryption.\n\nThis situation illustrates the use of key pairs:\n\nBob wants to send a secret file to Alice.\nAlice shares her public key with Bob.\nBob uses Alice’s public key to encrypt the file.\nBob sends the encrypted file to Alice.\nAlice uses her private key to decrypt the file.\n\nAnyone with your public key can encrypt files for you, but only you can decrypt them with your private key.\n\n\n\nSOPS is a secrets manager which lockbox uses for two main purposes:\n\nOrganize secrets in an encrypted “lockbox” file in YAML format.\nExport the secrets held in a lockbox as environment variables, so that other R processes and functions can access API keys, security tokens, etc.\n\n\n\n\n\n\n\nWarning\n\n\n\nYou must never edit your lockbox.yaml file manually. Always use the provided functions or sops to ensure the file remains valid and encrypted.",
+    "crumbs": [
+      "Home"
+    ]
+  },
+  {
+    "objectID": "index.html#installation",
+    "href": "index.html#installation",
+    "title": "lockbox: Simple File Encryption and Secrets Management in R",
+    "section": "",
+    "text": "The lockbox package uses the age encryption format through a Rust implementation, so you need to install Rust to compile the package. The easiest way to install Rust is through rustup:\n# Install Rust (all platforms)\ncurl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh\n# Follow the installation prompts, then restart your terminal\nFor secrets management, you also need to install the sops command line tool:\n\nSOPS website\n\n# macOS\nbrew install sops\n\n# Windows\nchoco install sops\n\n# Linux\n# Use your distribution's package manager\nOnce Rust and SOPS are installed, you can install the development version of lockbox from Github:\nlibrary(remotes)\ninstall_github(\"vincentarelbundock/lockbox\")",
+    "crumbs": [
+      "Home"
+    ]
+  },
+  {
+    "objectID": "index.html#keys",
+    "href": "index.html#keys",
+    "title": "lockbox: Simple File Encryption and Secrets Management in R",
+    "section": "",
+    "text": "Our first step is to create a private/public key pair using the key_generate() function. The private key is saved to a file and should be kept secret. The public key can be shared and is used to encrypt data.\n\nlibrary(lockbox)\nkey &lt;- key_generate(\"private.key\")\nkey\n\nAge key created at 2025-08-08 15:58:49 \nPublic key: age1e74pz3rc6r0zxznh8ht4yw5shzcnjywz0z3ua7lt8zkcx9ps6etsthksap\n\n\nThis command created a local “identity file,” which holds both the public and private keys. The function returns the public key directly as a string.\n\nfile.exists(\"private.key\")\n\n[1] TRUE\n\n\n\n\n\n\n\n\nWarning\n\n\n\nDo not share the private.key file. It should be kept secret and secure.\nSecurity Note: The private key file is created with default system permissions, which may be readable by other users. After generating a key, set secure permissions:\n# On Unix/Linux/macOS:\nSys.chmod(\"private.key\", \"0600\")  # Owner read/write only",
+    "crumbs": [
+      "Home"
+    ]
+  },
+  {
+    "objectID": "index.html#use-case-1-encrypting-files",
+    "href": "index.html#use-case-1-encrypting-files",
+    "title": "lockbox: Simple File Encryption and Secrets Management in R",
+    "section": "",
+    "text": "lockbox can encrypt and decrypt arbitrary files. To illustrate, let’s create a file with some text in it.\n\n# write file\ncat(\"Very sensitive data.\\n\", file = \"sensitive.txt\")\n\n# make sure we can read it\nreadLines(\"sensitive.txt\")\n\n[1] \"Very sensitive data.\"\n\n\nNow, let’s use the public key and the file_encrypt() function to encrypt the file. The .age suffix is added automatically to the file name, and the content becomes gibberish.\n\nfile_encrypt(\n  input = \"sensitive.txt\",\n  public = key\n)\n\nreadLines(\"sensitive.txt.age\")\n\n[1] \"age-encryption.org/v1\"                                                                                                                          \n[2] \"-&gt; X25519 +5a5epsvECX2i/5DxNm6kj2mVSR5X4RmG3kgfsh0AB4\"                                                                                          \n[3] \"YizR2zgViZs9ylxtCalqbGzLifoVZVzEs7rH/9VL6KQ\"                                                                                                    \n[4] \"-&gt; M1}V_q9/-grease\"                                                                                                                             \n[5] \"ueFFpFYdtCqH48TnTrPCPravXV2vqUDckmFgQgK7K2ma4MyKr/Grjz2e\"                                                                                       \n[6] \"--- hvBoNGC9n6CsIyklFTXOExdT5plpEJ4KA086qNdmk8Y\"                                                                                                \n[7] \"H\\f\\xc91\\xf9]\\016:\\xdb\\003G\\034\\xd5ه2\\020\\xecc\\024}o\\x8c?\\xa9\\xa1\\xc5;I\\025 \\xa9sJ\\xf9\\xaf&lt;\\xce\\xef\\xf4\\xb8{c\\xf0\\xf6j\\xf5\\xa90\\x9f\\xf5\\xe0\\xca\"\n\n\nFinally, we can decrypt the file using the private key file. The decrypted content is written to the specified output file.\n\nfile_decrypt(\n  input = \"sensitive.txt.age\",\n  output = \"sensitive_decrypted.txt\",\n  private = \"private.key\"\n)\n\nreadLines(\"sensitive_decrypted.txt\")\n\n[1] \"Very sensitive data.\"",
+    "crumbs": [
+      "Home"
+    ]
+  },
+  {
+    "objectID": "index.html#use-case-2-storing-secrets-in-a-lockbox-and-exporting-them-as-environment-variables",
+    "href": "index.html#use-case-2-storing-secrets-in-a-lockbox-and-exporting-them-as-environment-variables",
+    "title": "lockbox: Simple File Encryption and Secrets Management in R",
+    "section": "",
+    "text": "Several packages and applications require users to export secrets as environment variables for easy access. For example, you may need to store a security key to access the API of an LLM provider; the location of your private database; or credentials to access AWS services.\nGenerally speaking, we do not want to store those secrets in plain text files. Instead, we can store them in an encrypted YAML file, and use a helper function to decrypt the file and export environment variables.\nFirst, we define a named list with the values that we wish to store securely. Then, we call secrets_encrypt() to encrypt those secrets into our lockbox file. Again, we use the public key for encryption.\n\nsecrets &lt;- list(\n  API_KEY = \"your-api-key-here\",\n  DATABASE_URL = \"postgresql://user:pass@host:5432/db\",\n  AWS_ACCESS_KEY_ID = \"AKIAIOSFODNN7EXAMPLE\"\n)\n\nsecrets_encrypt(\n  lockbox = \"lockbox.yaml\",\n  secrets = secrets,\n  public = key\n)",
+    "crumbs": [
+      "Home"
+    ]
+  },
+  {
+    "objectID": "index.html#retrieving-secrets-from-a-lockbox",
+    "href": "index.html#retrieving-secrets-from-a-lockbox",
+    "title": "lockbox: Simple File Encryption and Secrets Management in R",
+    "section": "",
+    "text": "Now, we can retrieve all secrets using our private key file.\n\nsecrets_decrypt(\n  lockbox = \"lockbox.yaml\",\n  private = \"private.key\"\n)\n\n$API_KEY\n[1] \"your-api-key-here\"\n\n$DATABASE_URL\n[1] \"postgresql://user:pass@host:5432/db\"\n\n$AWS_ACCESS_KEY_ID\n[1] \"AKIAIOSFODNN7EXAMPLE\"",
+    "crumbs": [
+      "Home"
+    ]
+  },
+  {
+    "objectID": "index.html#modifying-secrets-in-a-lockbox",
+    "href": "index.html#modifying-secrets-in-a-lockbox",
+    "title": "lockbox: Simple File Encryption and Secrets Management in R",
+    "section": "",
+    "text": "To modify existing secrets or to add new ones, we can simply call secrets_encrypt() again. In this case, however, we need to supply the private key file because modifying requires us to read the existing secrets.\n\nsecrets_encrypt(\n  lockbox = \"lockbox.yaml\",\n  secrets = list(\"API_KEY\" = \"a-new-api-key\"),\n  private = \"private.key\"\n)\n\nWe see that the API_KEY value has indeed been updated.\n\nsecrets_decrypt(\n  lockbox = \"lockbox.yaml\",\n  private = \"private.key\")$API_KEY\n\n[1] \"a-new-api-key\"",
+    "crumbs": [
+      "Home"
+    ]
+  },
+  {
+    "objectID": "index.html#exporting-secrets-as-environment-variables",
+    "href": "index.html#exporting-secrets-as-environment-variables",
+    "title": "lockbox: Simple File Encryption and Secrets Management in R",
+    "section": "",
+    "text": "Finally, we can export all secrets from the lockbox file as environment variables. This is useful when running applications that rely on environment variables for configuration.\n\nsecrets_export(\n  lockbox = \"lockbox.yaml\",\n  private = \"private.key\"\n)\n\nAnd we see that the secrets are indeed available in the environment.\n\nSys.getenv(\"API_KEY\")\n\n[1] \"a-new-api-key\"\n\nSys.getenv(\"DATABASE_URL\")\n\n[1] \"postgresql://user:pass@host:5432/db\"",
+    "crumbs": [
+      "Home"
+    ]
+  },
+  {
+    "objectID": "index.html#enhanced-security-encrypting-your-private-key",
+    "href": "index.html#enhanced-security-encrypting-your-private-key",
+    "title": "lockbox: Simple File Encryption and Secrets Management in R",
+    "section": "",
+    "text": "For even more security, you can encrypt your private key file itself using a passphrase. This adds an extra layer of protection - even if someone gains access to your key file, they would need to know the passphrase to use it.\n\n\n\nfile_encrypt(\n  input = \"private.key\",\n  output = \"private.key.age\"\n)\n# You will be prompted to enter a secure passphrase\n\nWhen you run this command, you’ll be prompted to enter a passphrase. Make sure you choose a strong, memorable passphrase as you’ll need it every time you use the encrypted key file.\n\n\n\n\nunlink(\"private.key\")\n\n\n\n\nNow you can use your password-protected key file with all the same functions. The lockbox package will automatically detect that it’s an encrypted key file and prompt you for the passphrase when needed.\n\nsecrets_decrypt(\n  lockbox = \"lockbox.yaml\",\n  private = \"private.key.age\"\n)\n# You will be prompted for your passphrase\n\nsecrets_export(\n  lockbox = \"lockbox.yaml\",\n  private = \"private.key.age\"\n)\n# You will be prompted for your passphrase",
+    "crumbs": [
+      "Home"
+    ]
+  },
+  {
+    "objectID": "index.html#security-considerations",
+    "href": "index.html#security-considerations",
+    "title": "lockbox: Simple File Encryption and Secrets Management in R",
+    "section": "",
+    "text": "Warning\n\n\n\nTemporary File Handling\nThere are two cases where lockbox creates temporary files with sensitive data:\n\nWhen the private key used in secrets_decrypt() or file_decrypt() is itself passphrase-encrypted.\nWhen calling secrets_encrypt() to modify an existing lockbox file.\n\nIn both cases, a file is written to disk at tempfile(), and is automatically deleted using on.exit() and unlink() to ensure cleanup on function exit even if an error occurs.\nWhile this approach follows R best practices for temporary file handling, users with heightened security requirements may prefer to run age and sops directly from the command line to maintain full control over key file handling.",
+    "crumbs": [
+      "Home"
+    ]
+  }
+]

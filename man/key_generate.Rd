@@ -40,8 +40,8 @@ and rely on NTFS ACLs for protection.
 \dontrun{
 # Generate and save new key to file
 key <- key_generate("my_identity.key")
-print(key)  # prints the public key
-print(attr(key, "created"))  # prints creation time
+print(key) # prints the public key
+print(attr(key, "created")) # prints creation time
 
 # IMPORTANT: Secure the key file permissions
 Sys.chmod("my_identity.key", "0600")

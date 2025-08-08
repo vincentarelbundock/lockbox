@@ -16,7 +16,7 @@ NULL
 #' It reads the entire file into memory, detects the format, and returns the decrypted content as raw bytes.
 #' @keywords internal
 #' @noRd
-age_decrypt_passphrase <- function(encrypted_file_path, passphrase) .Call(wrap__age_decrypt_passphrase, encrypted_file_path, passphrase)
+age_decrypt_with_passphrase <- function(encrypted_file_path, passphrase) .Call(wrap__age_decrypt_with_passphrase, encrypted_file_path, passphrase)
 
 #' Decrypt an age-encrypted file using a private key
 #' 
@@ -24,7 +24,7 @@ age_decrypt_passphrase <- function(encrypted_file_path, passphrase) .Call(wrap__
 #' It reads the private key file, parses all identities, and returns the decrypted content as raw bytes.
 #' @keywords internal
 #' @noRd
-age_decrypt_key <- function(encrypted_file_path, private_key_path) .Call(wrap__age_decrypt_key, encrypted_file_path, private_key_path)
+age_decrypt_with_key <- function(encrypted_file_path, private_key_path) .Call(wrap__age_decrypt_with_key, encrypted_file_path, private_key_path)
 
 #' Generate a new age key pair and save to file
 #' 
