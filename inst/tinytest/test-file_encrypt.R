@@ -16,7 +16,7 @@ expect_true(file.exists(encrypted_file))
 expect_true(file.size(encrypted_file) > 0)
 
 # Test decryption to verify it worked
-decrypted_content <- age_decrypt_key(encrypted_file, key_file)
+decrypted_content <- file_decrypt(encrypted_file, output = NULL, private = key_file)
 expect_equal(trimws(decrypted_content), "Hello, World!")
 
 # Test with armor format
@@ -42,15 +42,15 @@ multi_encrypted <- file.path(test_dir, "multi.age")
 file_encrypt(input_file, multi_encrypted, public = c(key, key2))
 
 # Both keys should be able to decrypt
-decrypted1 <- age_decrypt_key(multi_encrypted, key_file)
-decrypted2 <- age_decrypt_key(multi_encrypted, key2_file)
+decrypted1 <- file_decrypt(multi_encrypted, output = NULL, private = key_file)
+decrypted2 <- file_decrypt(multi_encrypted, output = NULL, private = key2_file)
 expect_equal(trimws(decrypted1), "Hello, World!")
 expect_equal(trimws(decrypted2), "Hello, World!")
 
 # Test single recipient with character vector
 single_recipient <- file.path(test_dir, "single.age")
 file_encrypt(input_file, single_recipient, public = as.character(key))
-decrypted_single <- age_decrypt_key(single_recipient, key_file)
+decrypted_single <- file_decrypt(single_recipient, output = NULL, private = key_file)
 expect_equal(trimws(decrypted_single), "Hello, World!")
 
 # Note: Passphrase encryption tests are skipped because they require interactive input

@@ -4,11 +4,11 @@ use std::io::Read;
 use std::str::FromStr;
 use age::secrecy::ExposeSecret;
 
-/// Decrypt file content using identities and return as string
+/// Decrypt file content using identities and return as bytes
 /// 
 /// This helper function handles both ASCII-armored and binary age files,
-/// decrypts them, and returns the content as a string.
-fn decrypt_content<'a, I>(file_content: &[u8], identities: I) -> Result<String>
+/// decrypts them, and returns the content as raw bytes.
+fn decrypt_content<'a, I>(file_content: &[u8], identities: I) -> Result<Vec<u8>>
 where
     I: Iterator<Item = &'a dyn age::Identity>,
 {
@@ -35,8 +35,8 @@ where
             .map_err(|e| Error::Other(format!("Failed to decrypt: {}", e)))?)
     };
 
-    let mut decrypted_content = String::new();
-    decrypted_reader.read_to_string(&mut decrypted_content)
+    let mut decrypted_content = Vec::new();
+    decrypted_reader.read_to_end(&mut decrypted_content)
         .map_err(|e| Error::Other(format!("Failed to read decrypted content: {}", e)))?;
 
     Ok(decrypted_content)
@@ -69,11 +69,11 @@ fn parse_identities_from_key_file(key_content: &str) -> Result<Vec<Box<dyn age::
 /// Decrypt an age-encrypted file using a passphrase
 /// 
 /// This function handles both ASCII-armored and binary age files encrypted with passphrases.
-/// It reads the entire file into memory, detects the format, and returns the decrypted content as a string.
+/// It reads the entire file into memory, detects the format, and returns the decrypted content as raw bytes.
 /// @keywords internal
 /// @noRd
 #[extendr]
-fn age_decrypt_passphrase(encrypted_file_path: &str, passphrase: &str) -> Result<String> {
+fn age_decrypt_passphrase(encrypted_file_path: &str, passphrase: &str) -> Result<Raw> {
     use age::secrecy::SecretString;
     use std::iter;
 
@@ -86,17 +86,18 @@ fn age_decrypt_passphrase(encrypted_file_path: &str, passphrase: &str) -> Result
     let identity = age::scrypt::Identity::new(secret_pass);
     
     // Decrypt and return content using the passphrase identity
-    decrypt_content(&file_content, iter::once(&identity as _))
+    let decrypted_bytes = decrypt_content(&file_content, iter::once(&identity as _))?;
+    Ok(Raw::from_bytes(&decrypted_bytes))
 }
 
 /// Decrypt an age-encrypted file using a private key
 /// 
 /// This function handles both ASCII-armored and binary age files encrypted with public keys.
-/// It reads the private key file, parses all identities, and returns the decrypted content as a string.
+/// It reads the private key file, parses all identities, and returns the decrypted content as raw bytes.
 /// @keywords internal
 /// @noRd
 #[extendr]
-fn age_decrypt_key(encrypted_file_path: &str, private_key_path: &str) -> Result<String> {
+fn age_decrypt_key(encrypted_file_path: &str, private_key_path: &str) -> Result<Raw> {
     // Read the encrypted file and private key file
     let file_content = std::fs::read(encrypted_file_path)
         .map_err(|e| Error::Other(format!("Failed to read file: {}", e)))?;
@@ -108,7 +109,8 @@ fn age_decrypt_key(encrypted_file_path: &str, private_key_path: &str) -> Result<
     let identities = parse_identities_from_key_file(&key_content)?;
     
     // Decrypt and return content using all available identities
-    decrypt_content(&file_content, identities.iter().map(|i| i.as_ref()))
+    let decrypted_bytes = decrypt_content(&file_content, identities.iter().map(|i| i.as_ref()))?;
+    Ok(Raw::from_bytes(&decrypted_bytes))
 }
 
 /// Generate a new age key pair and save to file

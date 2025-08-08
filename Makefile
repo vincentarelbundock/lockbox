@@ -22,7 +22,7 @@ installdep: document  ## install with Suggests
 	Rscript -e "devtools::install(dependencies = TRUE)"
 
 test: install ## test
-	Rscript -e "library(tinytable);tinytest::run_test_dir()"
+	Rscript -e "library(lockbox);tinytest::run_test_dir()"
 
 website: install ## render vignettes and website
 	rm -rf _quarto
