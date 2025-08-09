@@ -1,3 +1,57 @@
+#' Check if a lockbox file uses SOPS format
+#'
+#' Determines whether a YAML lockbox file uses SOPS encryption (with sops metadata)
+#' or the simpler lockbox format (with lockbox metadata).
+#'
+#' @param lockbox Character string, path to the YAML lockbox file
+#'
+#' @return Logical, TRUE if file uses SOPS format, FALSE if custom lockbox format
+#' @keywords internal
+is_sops <- function(lockbox) {
+  checkmate::assert_file_exists(lockbox)
+
+  # Check for .yaml extension
+  if (tools::file_ext(lockbox) != "yaml") {
+    stop("lockbox file must have a .yaml extension", call. = FALSE)
+  }
+
+  lockbox <- normalizePath(lockbox, mustWork = TRUE)
+
+  tryCatch(
+    {
+      content <- yaml::yaml.load_file(lockbox)
+
+      if (is.null(content)) {
+        return(FALSE)
+      }
+
+      # SOPS files have a 'sops' metadata section
+      if (!is.null(content$sops)) {
+        return(TRUE)
+      }
+
+      # Custom lockbox files have lockbox metadata
+      if (!is.null(content$lockbox_version)) {
+        return(FALSE)
+      }
+
+      # If neither metadata is found, assume it's an old/invalid file
+      # Try to determine by looking for age recipients in sops format
+      if (!is.null(content$sops) ||
+        (is.list(content) && any(sapply(content, function(x) {
+          is.list(x) && !is.null(x$age) && is.list(x$age)
+        })))) {
+        return(TRUE)
+      }
+
+      return(FALSE)
+    },
+    error = function(e) {
+      stop("Failed to read lockbox file: ", e$message, call. = FALSE)
+    })
+}
+
+
 #' @keywords internal
 assert_sops <- function() {
   sops_available <- nzchar(Sys.which("sops"))
@@ -103,7 +157,7 @@ secrets_recipients <- function(lockbox) {
 }
 
 
-#' Encrypt secrets using SOPS
+#' Encrypt secrets using SOPS (internal helper)
 #'
 #' Creates or updates a SOPS-managed and age-encrypted file with secrets. For new files,
 #' requires public age keys. For existing files, requires the private key
@@ -115,33 +169,8 @@ secrets_recipients <- function(lockbox) {
 #' @param private Character string, path to private key file (required for updates, can be password-protected age file)
 #'
 #' @return Invisible NULL
-#' @export
-#'
-#' @examples
-#' \dontrun{
-#' # Generate a key pair
-#' key <- key_generate.R("private.key")
-#'
-#' # Create new encrypted lockbox file
-#' secrets <- list(
-#'   API_KEY = "your-api-key-here",
-#'   DATABASE_URL = "postgresql://user:pass@host:5432/db",
-#'   AWS_ACCESS_KEY_ID = "AKIAIOSFODNN7EXAMPLE"
-#' )
-#' secrets_encrypt(
-#'   lockbox = "lockbox.yaml",
-#'   secrets = secrets,
-#'   public = key$public
-#' )
-#'
-#' # Update existing lockbox file
-#' secrets_encrypt(
-#'   lockbox = "lockbox.yaml",
-#'   secrets = list(API_KEY = "a-new-api-key"),
-#'   private = "private.key"
-#' )
-#' }
-secrets_encrypt <- function(
+#' @keywords internal
+secrets_encrypt_sops <- function(
     lockbox = NULL,
     secrets = NULL,
     public = NULL,
@@ -182,7 +211,7 @@ secrets_encrypt <- function(
       )
     }
     public <- secrets_recipients(lockbox)
-    old_secrets <- secrets_decrypt(lockbox, private = private)
+    old_secrets <- secrets_decrypt_sops(lockbox, private = private)
     secrets <- modifyList(old_secrets, secrets)
   } else {
     if (is.null(public)) {
@@ -203,7 +232,7 @@ secrets_encrypt <- function(
 }
 
 
-#' Decrypt secrets from SOPS file
+#' Decrypt secrets from SOPS file (internal helper)
 #'
 #' Decrypts a SOPS-encrypted file and returns the secrets as a named list.
 #' Automatically handles password-protected age private key files by prompting
@@ -213,29 +242,8 @@ secrets_encrypt <- function(
 #' @param private Character string, path to private age key file (can be password-protected)
 #'
 #' @return Named list of decrypted secrets
-#' @export
-#'
-#' @examples
-#' \dontrun{
-#' # Decrypt with regular private key
-#' secrets_decrypt(
-#'   lockbox = "lockbox.yaml",
-#'   private = "private.key"
-#' )
-#'
-#' # Decrypt with password-protected private key (will prompt for password)
-#' secrets_decrypt(
-#'   lockbox = "lockbox.yaml",
-#'   private = "private.key.age"
-#' )
-#'
-#' # Access individual secrets
-#' secrets_decrypt(
-#'   lockbox = "lockbox.yaml",
-#'   private = "private.key"
-#' )$API_KEY
-#' }
-secrets_decrypt <- function(
+#' @keywords internal
+secrets_decrypt_sops <- function(
     lockbox = NULL,
     private = NULL) {
   assert_sops()
@@ -274,7 +282,7 @@ secrets_decrypt <- function(
 }
 
 
-#' Export SOPS secrets to environment variables
+#' Export SOPS secrets to environment variables (internal helper)
 #'
 #' Decrypts secrets from a SOPS file and sets them as environment variables
 #' in the current R session. Each secret becomes an environment variable
@@ -284,21 +292,8 @@ secrets_decrypt <- function(
 #' @param private Character string, path to private age key file (can be password-protected)
 #'
 #' @return Invisible character vector of exported variable names
-#' @export
-#'
-#' @examples
-#' \dontrun{
-#' # Export all secrets as environment variables
-#' secrets_export(
-#'   lockbox = "lockbox.yaml",
-#'   private = "private.key"
-#' )
-#'
-#' # Now secrets are available as environment variables
-#' Sys.getenv("API_KEY")
-#' Sys.getenv("DATABASE_URL")
-#' }
-secrets_export <- function(
+#' @keywords internal
+secrets_export_sops <- function(
     lockbox = NULL,
     private = NULL) {
   assert_sops()
@@ -308,7 +303,7 @@ secrets_export <- function(
   private <- normalizePath(private, mustWork = TRUE)
 
   # Decrypt the secrets and set them as environment variables
-  secrets <- secrets_decrypt(lockbox = lockbox, private = private)
+  secrets <- secrets_decrypt_sops(lockbox = lockbox, private = private)
 
   # Set each secret as an environment variable
   for (name in names(secrets)) {
@@ -318,3 +313,4 @@ secrets_export <- function(
   # Return the names of the exported variables
   invisible(names(secrets))
 }
+

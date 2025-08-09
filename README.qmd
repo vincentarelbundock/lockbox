@@ -1,6 +1,6 @@
 # lockbox: Simple File Encryption and Secrets Management in R
 
-> Simple file encryption and secret management for R using modern cryptographic tools. Provides functions to encrypt/decrypt files with 'age' and manage secrets in encrypted YAML files with 'SOPS'. Secrets can be easily exported as environment variables for use with APIs and services. Supports both file-based and in-memory key management workflows.
+> Simple file encryption and secret management for R using modern cryptographic tools. Provides functions to encrypt/decrypt files with 'age' and manage secrets in encrypted YAML files. Secrets can be easily exported as environment variables for use with APIs and services. Supports both file-based and in-memory key management workflows.
 
 :::: {.callout-important}
 This package is designed for Vincent's personal use. If it is useful to you, great! But there are no guarantees that the implemented workflows are totally secure, or that the user interface will be remain stable. 
@@ -15,7 +15,7 @@ This package is designed for Vincent's personal use. If it is useful to you, gre
 
 ## How?
 
-To solve these problems, `lockbox` provides Rust bindings to the [age encryption tool](https://age-encryption.org) and a convenience wrapper around the [SOPS secrets manager.](https://getsops.io/)
+To solve these problems, `lockbox` provides Rust bindings to the [age encryption tool](https://age-encryption.org) for file encryption and implements a simple secrets management format. The default lockbox format is a simpler, more user-friendly version of [SOPS](https://getsops.io/), storing secrets in YAML files where keys remain in plain text but values are encrypted. For power users who need advanced features like key rotation and complex recipient management, full SOPS integration is also supported (see [SOPS Integration](#sops-integration-optional) section below).
 
 ### `age`: encryption
 
@@ -40,15 +40,28 @@ This situation illustrates the use of key pairs:
 
 Anyone with your public key can encrypt files for you, but only you can decrypt them with your private key.
 
-### `SOPS`: organize and export secrets
+### `lockbox`: organize and export secrets
 
-[SOPS](https://github.com/mozilla/sops) is a secrets manager which `lockbox` uses for two main purposes:
+`lockbox` implements a simple secrets management system for two main purposes:
 
-1. Organize secrets in an encrypted "lockbox" file in YAML format.
+1. Organize secrets in an encrypted "lockbox" file in YAML format where keys are plain text but values are encrypted.
 2. Export the secrets held in a lockbox as environment variables, so that other R processes and functions can access API keys, security tokens, etc.
 
+The lockbox format creates YAML files that look like this:
+
+```yaml
+API_KEY: "age1xyz789encrypted_value_here_abc123"
+DATABASE_URL: "age1xyz789another_encrypted_value_def456"
+lockbox_created: !expr "2024-01-15 10:30:00 UTC"
+lockbox_version: "0.0.1"
+lockbox_recipients: 
+  - "age1abc123..."
+```
+
+As you can see, the secret keys (like `API_KEY`) remain readable, but their values are encrypted using age. The file also includes metadata about when it was created, the package version, and which public keys can decrypt it.
+
 ::::{.callout-warning}
-You must _never_ edit your `lockbox.yaml` file manually. Always use the provided functions or `sops` to ensure the file remains valid and encrypted.
+You must _never_ edit your `lockbox.yaml` file manually. Always use the provided functions to ensure the file remains valid and encrypted.
 ::::
 
 ## Installation
@@ -61,22 +74,7 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 # Follow the installation prompts, then restart your terminal
 ```
 
-For secrets management, you also need to install the `sops` command line tool:
-
-* [SOPS website](https://getsops.io/)
-
-```sh
-# macOS
-brew install sops
-
-# Windows
-choco install sops
-
-# Linux
-# Use your distribution's package manager
-```
-
-Once Rust and SOPS are installed, you can install the development version of `lockbox` from Github:
+Once Rust is installed, you can install the development version of `lockbox` from Github:
 
 ```r
 library(remotes)
@@ -275,6 +273,49 @@ In both cases, a file is written to disk at `tempfile()`, and is automatically d
 
 While this approach follows R best practices for temporary file handling, users with heightened security requirements may prefer to run `age` and `sops` directly from the command line to maintain full control over key file handling.
 ::::
+
+## SOPS Integration (Optional)
+
+For power users who need advanced secrets management features, `lockbox` also supports [SOPS (Secrets OPerationS)](https://getsops.io/), a mature secrets manager from Mozilla. SOPS provides additional features like:
+
+- Key rotation capabilities
+- Integration with cloud KMS services (AWS KMS, GCP KMS, Azure Key Vault)
+- Support for multiple key types (age, PGP, etc.)
+- Advanced recipient management
+- Integration with CI/CD pipelines
+
+### Installing SOPS
+
+To use SOPS features, install the SOPS command line tool:
+
+```sh
+# macOS
+brew install sops
+
+# Windows
+choco install sops
+
+# Linux
+# Use your distribution's package manager or download from GitHub releases
+```
+
+### Using SOPS Mode
+
+When SOPS is installed, `lockbox` will automatically detect it and use SOPS format for new lockbox files. You can also explicitly force SOPS mode:
+
+```r
+# Force SOPS format (requires SOPS to be installed)
+secrets_encrypt(
+  lockbox = "sops_lockbox.yaml",
+  secrets = list(API_KEY = "secret-value"),
+  public = key,
+  sops = TRUE
+)
+```
+
+SOPS-managed files have a different format with additional metadata for key management, but the same `secrets_decrypt()` and `secrets_export()` functions work seamlessly with both formats.
+
+If SOPS is not installed, `lockbox` automatically falls back to its built-in format, ensuring that basic secrets management works out of the box without external dependencies.
 
 ```{r}
 #| include: false

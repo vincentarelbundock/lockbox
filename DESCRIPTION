@@ -19,7 +19,7 @@ Imports:
     getPass,
     stringi,
     yaml
-SystemRequirements: sops, Cargo (Rust's package manager), rustc
+SystemRequirements: Cargo (Rust's package manager), rustc
 RoxygenNote: 7.3.2
 Roxygen: list(markdown = TRUE)
 Config/rextendr/version: 0.4.1.9000
