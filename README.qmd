@@ -10,15 +10,12 @@ This package is designed for Vincent's personal use. If it is useful to you, gre
 
 `lockbox` targets two main use cases:
 
-1. _File Encryption_: R users need an easy way to encrypt and decrypt files using simple, modern, secure encryption methods. The package supports simple passwords and support key pair workflows.
+1. _File Encryption_: R users need an easy way to encrypt and decrypt files using simple, modern, secure encryption methods. The package supports both password and key pair-based workflows.
 2. _Secrets Management_: Many R packages, functions, and services rely on environment variables to retrieve users' API keys, security tokens, and assorted secrets (ex: LLM APIs, AWS services, database locations, etc.). Users need a secure way to store secrets in an encrypted file, and a convenient way to export those secrets as environment variables. Although there are solutions for this outside R, it is useful to do it within to ensure that variables are accessible in the current R session.
 
 ## How?
 
-To solve these problems, `lockbox` provides a convenience wrapper around two command line tools: 
-
-1. The [age](https://age-encryption.org) encryption tool.
-2. The [SOPS](https://getsops.io/) secrets manager.
+To solve these problems, `lockbox` provides Rust bindings to the [age encryption tool](https://age-encryption.org) and a convenience wrapper around the [SOPS secrets manager.](https://getsops.io/)
 
 ### `age`: encryption
 
