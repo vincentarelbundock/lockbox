@@ -275,6 +275,179 @@ fn age_encrypt_passphrase(input_file_path: &str, output_file_path: &str, passphr
     Ok(())
 }
 
+/// Encrypt a string using age with public keys
+/// 
+/// This function encrypts a string using one or more age public keys (recipients).
+/// Returns the encrypted content as a base64-encoded string or ASCII armor.
+/// @keywords internal
+/// @noRd
+#[extendr]
+fn age_encrypt_string_with_key(input_string: &str, recipients: Vec<String>, armor: bool) -> Result<String> {
+    use age::armor::ArmoredWriter;
+    use std::io::Write;
+    
+    // Parse recipients (reuse logic from age_encrypt_key)
+    let mut parsed_recipients = Vec::new();
+    for recipient_str in recipients {
+        let recipient = recipient_str.parse::<age::x25519::Recipient>()
+            .map_err(|e| Error::Other(format!("Invalid recipient '{}': {}", recipient_str, e)))?;
+        parsed_recipients.push(Box::new(recipient) as Box<dyn age::Recipient>);
+    }
+    
+    if parsed_recipients.is_empty() {
+        return Err(Error::Other("At least one recipient is required".to_string()));
+    }
+    
+    // Create encryptor (reuse from age_encrypt_key)
+    let encryptor = age::Encryptor::with_recipients(parsed_recipients.iter().map(|r| r.as_ref()))
+        .map_err(|e| Error::Other(format!("Failed to create encryptor: {}", e)))?;
+    
+    // Use in-memory buffer instead of file
+    let mut output_buffer = Vec::new();
+    
+    if armor {
+        // Handle ASCII armor case specially
+        use age::armor::Format;
+        let mut armored_writer = ArmoredWriter::wrap_output(&mut output_buffer, Format::AsciiArmor)
+            .map_err(|e| Error::Other(format!("Failed to create armored writer: {}", e)))?;
+        
+        // Encrypt and write to armored writer
+        let mut encrypted_writer = encryptor.wrap_output(&mut armored_writer)
+            .map_err(|e| Error::Other(format!("Failed to wrap output for encryption: {}", e)))?;
+        
+        encrypted_writer.write_all(input_string.as_bytes())
+            .map_err(|e| Error::Other(format!("Failed to write encrypted data: {}", e)))?;
+        
+        encrypted_writer.finish()
+            .map_err(|e| Error::Other(format!("Failed to finalize encryption: {}", e)))?;
+        
+        // Must finish the armored writer to get complete output
+        armored_writer.finish()
+            .map_err(|e| Error::Other(format!("Failed to finalize armored writer: {}", e)))?;
+        
+        // Return ASCII armor as string
+        Ok(String::from_utf8(output_buffer)
+            .map_err(|e| Error::Other(format!("Failed to convert armored output to string: {}", e)))?)
+    } else {
+        // Handle binary case - encrypt directly to buffer
+        let mut encrypted_writer = encryptor.wrap_output(&mut output_buffer)
+            .map_err(|e| Error::Other(format!("Failed to wrap output for encryption: {}", e)))?;
+        
+        encrypted_writer.write_all(input_string.as_bytes())
+            .map_err(|e| Error::Other(format!("Failed to write encrypted data: {}", e)))?;
+        
+        encrypted_writer.finish()
+            .map_err(|e| Error::Other(format!("Failed to finalize encryption: {}", e)))?;
+        
+        // Return binary as base64
+        use base64::{Engine as _, engine::general_purpose};
+        Ok(general_purpose::STANDARD.encode(&output_buffer))
+    }
+}
+
+/// Encrypt a string using age with a passphrase
+/// 
+/// This function encrypts a string using a passphrase-based encryption.
+/// Returns the encrypted content as a base64-encoded string.
+/// @keywords internal
+/// @noRd
+#[extendr]
+fn age_encrypt_string_with_passphrase(input_string: &str, passphrase: &str) -> Result<String> {
+    use age::secrecy::SecretString;
+    use std::io::Write;
+    
+    // Create scrypt encryptor (reuse from age_encrypt_passphrase)
+    let secret_pass = SecretString::from(passphrase.to_owned());
+    let encryptor = age::Encryptor::with_user_passphrase(secret_pass);
+    
+    // Use in-memory buffer instead of file
+    let mut output_buffer = Vec::new();
+    
+    // Encrypt and write (similar to age_encrypt_passphrase)
+    let mut encrypted_writer = encryptor.wrap_output(&mut output_buffer)
+        .map_err(|e| Error::Other(format!("Failed to wrap output for encryption: {}", e)))?;
+    
+    encrypted_writer.write_all(input_string.as_bytes())
+        .map_err(|e| Error::Other(format!("Failed to write encrypted data: {}", e)))?;
+    
+    encrypted_writer.finish()
+        .map_err(|e| Error::Other(format!("Failed to finalize encryption: {}", e)))?;
+    
+    // Return as base64-encoded string
+    use base64::{Engine as _, engine::general_purpose};
+    Ok(general_purpose::STANDARD.encode(&output_buffer))
+}
+
+/// Decrypt an encrypted string using a passphrase
+/// 
+/// This function decrypts a base64-encoded or ASCII-armored encrypted string using a passphrase.
+/// Returns the decrypted content as a string.
+/// @keywords internal
+/// @noRd
+#[extendr]
+fn age_decrypt_string_with_passphrase(encrypted_string: &str, passphrase: &str) -> Result<String> {
+    use age::secrecy::SecretString;
+    use std::iter;
+    
+    // Handle both ASCII armor and base64-encoded binary
+    let encrypted_bytes = if encrypted_string.starts_with("-----BEGIN AGE ENCRYPTED FILE-----") {
+        // For ASCII armor, we need to include the full string with newlines properly
+        encrypted_string.as_bytes().to_vec()
+    } else {
+        // For base64-encoded binary, decode first
+        use base64::{Engine as _, engine::general_purpose};
+        general_purpose::STANDARD.decode(encrypted_string)
+            .map_err(|e| Error::Other(format!("Failed to decode base64: {}", e)))?
+    };
+    
+    // Create scrypt identity (reuse from age_decrypt_with_passphrase)
+    let secret_pass = SecretString::from(passphrase.to_owned());
+    let identity = age::scrypt::Identity::new(secret_pass);
+    
+    
+    // Decrypt using existing decrypt_content function
+    let decrypted_bytes = decrypt_content(&encrypted_bytes, iter::once(&identity as _))?;
+    
+    // Convert to string
+    String::from_utf8(decrypted_bytes)
+        .map_err(|e| Error::Other(format!("Failed to convert decrypted content to UTF-8: {}", e)))
+}
+
+/// Decrypt an encrypted string using a private key
+/// 
+/// This function decrypts a base64-encoded or ASCII-armored encrypted string using a private key.
+/// Returns the decrypted content as a string.
+/// @keywords internal
+/// @noRd
+#[extendr]
+fn age_decrypt_string_with_key(encrypted_string: &str, private_key_path: &str) -> Result<String> {
+    // Handle both ASCII armor and base64-encoded binary
+    let encrypted_bytes = if encrypted_string.starts_with("-----BEGIN AGE ENCRYPTED FILE-----") {
+        // For ASCII armor, we need to include the full string with newlines properly
+        encrypted_string.as_bytes().to_vec()
+    } else {
+        // For base64-encoded binary, decode first
+        use base64::{Engine as _, engine::general_purpose};
+        general_purpose::STANDARD.decode(encrypted_string)
+            .map_err(|e| Error::Other(format!("Failed to decode base64: {}", e)))?
+    };
+    
+    // Read private key file (reuse from age_decrypt_with_key)
+    let key_content = std::fs::read_to_string(private_key_path)
+        .map_err(|_| Error::Other("Failed to read private key file".to_string()))?;
+    
+    // Parse identities using existing function
+    let identities = parse_identities_from_key_file(&key_content)?;
+    
+    
+    // Decrypt using existing decrypt_content function
+    let decrypted_bytes = decrypt_content(&encrypted_bytes, identities.iter().map(|i| i.as_ref()))?;
+    
+    // Convert to string
+    String::from_utf8(decrypted_bytes)
+        .map_err(|e| Error::Other(format!("Failed to convert decrypted content to UTF-8: {}", e)))
+}
+
 // Register the Rust functions with R's extendr system
 // This macro generates the necessary C bindings for R to call our Rust functions
 extendr_module! {
@@ -285,4 +458,8 @@ extendr_module! {
     fn age_extract_public_key;
     fn age_encrypt_key;
     fn age_encrypt_passphrase;
+    fn age_encrypt_string_with_key;
+    fn age_encrypt_string_with_passphrase;
+    fn age_decrypt_string_with_passphrase;
+    fn age_decrypt_string_with_key;
 }

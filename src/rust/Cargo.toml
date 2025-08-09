@@ -13,3 +13,4 @@ name = 'lockbox'
 extendr-api = '*'
 age = { version = "0.11.1", features = ["armor"] }
 chrono = { version = "0.4", features = ["serde"] }
+base64 = "0.22"

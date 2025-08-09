@@ -246,3 +246,108 @@ print.lockbox_key <- function(x, ...) {
   cat("Public key: ", x, "\n", sep = "")
   invisible(x)
 }
+
+
+#' Encrypt strings using age
+#'
+#' Encrypts one or more strings using the age encryption tool. Can encrypt with public keys
+#' (for key-based encryption) or with a passphrase (when no public keys provided).
+#' If no public keys are specified, will prompt for a passphrase interactively.
+#'
+#' @param input Character vector of strings to encrypt
+#' @param public Character vector of age public keys (recipients). If NULL,
+#'   will use passphrase encryption and prompt for password.
+#' @param armor Logical, whether to use ASCII armor format (only applies to public key encryption)
+#'
+#' @return Character vector of encrypted strings
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' # Encrypt with public key
+#' encrypted <- string_encrypt(c("secret1", "secret2"), public = "age1xyz...")
+#'
+#' # Encrypt with passphrase (will prompt)
+#' encrypted <- string_encrypt("my secret")
+#'
+#' # Encrypt with armor
+#' encrypted <- string_encrypt("secret", public = "age1xyz...", armor = TRUE)
+#' }
+string_encrypt <- function(
+    input = NULL,
+    public = NULL,
+    armor = FALSE) {
+  checkmate::assert_character(input, min.len = 1)
+  checkmate::assert_character(public, null.ok = TRUE)
+  checkmate::assert_flag(armor)
+
+  if (!is.null(public)) {
+    # Use public key encryption
+    vapply(input, function(x) {
+      age_encrypt_string_with_key(x, public, armor)
+    }, character(1), USE.NAMES = FALSE)
+  } else {
+    # Use passphrase encryption - prompt user for passphrase
+    passphrase <- getPass::getPass("Enter password for encryption or press Enter to get a random string:\n")
+    if (nchar(passphrase) == 0) {
+      # Generate random passphrase if user provided empty input
+      random_length <- sample(30:40, 1)
+      passphrase <- stringi::stri_rand_strings(1, random_length, pattern = "[A-Za-z0-9]")
+      message("Your random password: ", passphrase)
+      message("Save this password. You will need it to decrypt the strings.")
+    }
+    # Armor is ignored for passphrase encryption (always base64)
+    vapply(input, function(x) {
+      age_encrypt_string_with_passphrase(x, passphrase)
+    }, character(1), USE.NAMES = FALSE)
+  }
+}
+
+
+#' Decrypt age-encrypted strings
+#'
+#' Decrypts strings that were encrypted with age. Can decrypt using a private key file
+#' (for key-based decryption) or with a passphrase (when no private key provided).
+#' If no private key is specified, will prompt for a passphrase interactively.
+#'
+#' @param input Character vector of age-encrypted strings to decrypt
+#' @param private Character string, path to the private age key file. If NULL,
+#'   will use passphrase decryption and prompt for password.
+#'
+#' @return Character vector of decrypted strings
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' # Decrypt with private key
+#' decrypted <- string_decrypt(encrypted_strings, private = "identity.key")
+#'
+#' # Decrypt with passphrase (will prompt)
+#' decrypted <- string_decrypt(encrypted_strings)
+#' }
+string_decrypt <- function(
+    input = NULL,
+    private = NULL) {
+  # Input validation
+  checkmate::assert_character(input, min.len = 1)
+  checkmate::assert_character(private, len = 1, null.ok = TRUE)
+
+  # Use appropriate Rust function based on authentication method
+  if (!is.null(private)) {
+    # Use key-based decryption
+    checkmate::assert_file_exists(private)
+    private <- normalizePath(private, mustWork = TRUE)
+    vapply(input, function(x) {
+      age_decrypt_string_with_key(x, private)
+    }, character(1), USE.NAMES = FALSE)
+  } else {
+    # Use passphrase-based decryption - prompt user for passphrase
+    passphrase <- getPass::getPass("Enter passphrase for decryption: ")
+    if (nchar(passphrase) == 0) {
+      stop("Empty passphrase not allowed.", call. = FALSE)
+    }
+    vapply(input, function(x) {
+      age_decrypt_string_with_passphrase(x, passphrase)
+    }, character(1), USE.NAMES = FALSE)
+  }
+}

@@ -57,5 +57,37 @@ age_encrypt_key <- function(input_file_path, output_file_path, recipients, armor
 #' @noRd
 age_encrypt_passphrase <- function(input_file_path, output_file_path, passphrase) .Call(wrap__age_encrypt_passphrase, input_file_path, output_file_path, passphrase)
 
+#' Encrypt a string using age with public keys
+#' 
+#' This function encrypts a string using one or more age public keys (recipients).
+#' Returns the encrypted content as a base64-encoded string or ASCII armor.
+#' @keywords internal
+#' @noRd
+age_encrypt_string_with_key <- function(input_string, recipients, armor) .Call(wrap__age_encrypt_string_with_key, input_string, recipients, armor)
+
+#' Encrypt a string using age with a passphrase
+#' 
+#' This function encrypts a string using a passphrase-based encryption.
+#' Returns the encrypted content as a base64-encoded string.
+#' @keywords internal
+#' @noRd
+age_encrypt_string_with_passphrase <- function(input_string, passphrase) .Call(wrap__age_encrypt_string_with_passphrase, input_string, passphrase)
+
+#' Decrypt an encrypted string using a passphrase
+#' 
+#' This function decrypts a base64-encoded or ASCII-armored encrypted string using a passphrase.
+#' Returns the decrypted content as a string.
+#' @keywords internal
+#' @noRd
+age_decrypt_string_with_passphrase <- function(encrypted_string, passphrase) .Call(wrap__age_decrypt_string_with_passphrase, encrypted_string, passphrase)
+
+#' Decrypt an encrypted string using a private key
+#' 
+#' This function decrypts a base64-encoded or ASCII-armored encrypted string using a private key.
+#' Returns the decrypted content as a string.
+#' @keywords internal
+#' @noRd
+age_decrypt_string_with_key <- function(encrypted_string, private_key_path) .Call(wrap__age_decrypt_string_with_key, encrypted_string, private_key_path)
+
 
 # nolint end
