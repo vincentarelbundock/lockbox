@@ -38,6 +38,7 @@ sandbox/*.pdf
 
 # weird files
 trash*
+tmp.*
 example.pdf
 example.html
 example.tex
